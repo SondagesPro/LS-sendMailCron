@@ -34,6 +34,18 @@ class sendMailCron extends PluginBase
             'type' => 'info',
             'content' => 'Need activate cron system in the server : php yourlimesurveydir/application/commands/console.php plugin cron --interval=X where X is interval in minutes',
         ),
+        'hostInfo' => array(
+            'type' => 'string',
+            'label' => 'Host info for url',
+        ),
+        'baseUrl' => array(
+            'type' => 'string',
+            'label' => 'baseUrl',
+        ),
+        'scriptUrl' => array(
+            'type' => 'string',
+            'label' => 'scriptUrl',
+        ),
         'maxEmail' => array(
             'type'=>'int',
             'htmlOptions'=>array(
@@ -65,6 +77,32 @@ class sendMailCron extends PluginBase
     public function init()
     {
         $this->subscribe('cron','sendMailByCron');
+        $this->subscribe('beforeActivate');
+    }
+
+    /**
+    * set actual url when activate
+    */
+    public function beforeActivate()
+    {
+        $event = $this->getEvent();
+        if(is_null($this->getSetting('hostInfo')))
+        {
+            if(Yii::app() instanceof CConsoleApplication)
+            {
+                $event->set('success', false);
+                $event->set('message', 'This plugin need to be configurated before activate.');
+                return;
+            }
+            $settings=array(
+                'hostInfo'=>Yii::app()->request->getHostInfo(),
+                'baseUrl'=>Yii::app()->request->getBaseUrl(),
+                'scriptUrl'=>Yii::app()->request->getScriptUrl(),
+            );
+            $this->saveSettings($settings);
+            $event->set('message', 'Default configuration for url is used.');
+            App()->setFlashMessage('Default configuration for url is used.');
+        }
     }
 
     public function sendMailByCron()
@@ -78,10 +116,17 @@ class sendMailCron extends PluginBase
                     ':now2' => self::dateShifted(date("Y-m-d H:i:s"))
                 )
             );
+        // Unsire we need whole ... to be fixed
         Yii::import('application.helpers.common_helper', true);
         Yii::import('application.helpers.surveytranslator_helper', true);
         Yii::import('application.helpers.replacements_helper', true);
         Yii::import('application.helpers.expressions.em_manager_helper', true);
+        // Fix the url
+        Yii::app()->request->hostInfo=$this->getSetting("hostInfo");
+        // Need to parse url and test
+        Yii::app()->request->baseUrl=$this->getSetting("baseUrl");
+        Yii::app()->request->scriptUrl=$this->getSetting("scriptUrl");
+
         if($oSurveys)
         {
             foreach ($oSurveys as $oSurvey)
@@ -243,9 +288,9 @@ class sendMailCron extends PluginBase
                         $aFieldsArray['{' . strtoupper($attribute) . '}'] =$value;
                     }
                     // Url Links
-                    $aUrlsArray["OPTOUTURL"] = Yii::app()->createUrl("/optout/tokens/langcode/{$sLanguage}/surveyid/{$iSurvey}/token/{$sToken}");
-                    $aUrlsArray["OPTINURL"] = Yii::app()->createUrl("/optin/tokens/langcode/{$sLanguage}/surveyid/{$iSurvey}/token/{$sToken}");
-                    $aUrlsArray["SURVEYURL"] = Yii::app()->createUrl("/survey/index/sid/{$iSurvey}/token/{$sToken}/lang/{$sLanguage}/");
+                    $aUrlsArray["OPTOUTURL"] = App()->createAbsoluteUrl("/optout/tokens",array('langcode'=>$sLanguage,'surveyid'=>$iSurvey,'token'=>$sToken));
+                    $aUrlsArray["OPTINURL"] = App()->createAbsoluteUrl("/optin/tokens",array('langcode'=>$sLanguage,'surveyid'=>$iSurvey,'token'=>$sToken));
+                    $aUrlsArray["SURVEYURL"] = App()->createAbsoluteUrl("/survey/index",array('sid'=>$iSurvey,'token'=>$sToken,'lang'=>$sLanguage));
                     foreach($aUrlsArray as $key=>$url)
                     {
                         if ($bHtml)
@@ -311,13 +356,13 @@ class sendMailCron extends PluginBase
                 }
             }
             if(!$iSendedMail && !$iErrorMail && !$iInvalidMail)
-                $this->log("Aucun message à traiter",1);
+                $this->log("No message to sent",1);
             if($iSendedMail)
-                $this->log("{$iSendedMail} message(s) envoyé(s)",1);
+                $this->log("{$iSendedMail} messages sent",1);
             if($iInvalidMail)
-                $this->log("{$iInvalidMail} adresse(s) invalide(s)",1);
+                $this->log("{$iInvalidMail} invalid email adress",1);
             if($iErrorMail)
-                $this->log("{$iErrorMail} message(s) en erreur inconnue",1);
+                $this->log("{$iErrorMail} messages with unknow error",1);
         }
         /**
         * log
@@ -356,13 +401,30 @@ class sendMailCron extends PluginBase
             //echo $this->txtReport;
         }
 
+        /**
+        * LimeSurvey 2.06 have issue with getPluginSettings->getPluginSettings (autoloader is broken) with command
+        * Then use own function
+        */
         private function getSetting($sSetting,$sObject=null,$sObjectId=null,$default=null)
         {
             //~ if($sObject && $sObjectId)
             $oSetting=PluginSetting::model()->find("plugin_id=:plugin_id AND model IS NULL AND ".Yii::app()->db->quoteColumnName("key")."=:ssetting",array(":plugin_id"=>$this->id,":ssetting"=>$sSetting));
             if($oSetting && !is_null($oSetting->value))
-                return $oSetting->value;
+            {
+                return trim(stripslashes($oSetting->value),'"');
+            }
             else
                 return $default;
+        }
+        // Set the default to actual url when show settngs
+        public function getPluginSettings($getValues=true)
+        {
+            if(!Yii::app() instanceof CConsoleApplication)
+            {
+                $this->settings['hostInfo']['default']= Yii::app()->request->getHostInfo();
+                $this->settings['baseUrl']['default']= Yii::app()->request->getBaseUrl();
+                $this->settings['scriptUrl']['default']= Yii::app()->request->getScriptUrl();
+            }
+            return parent::getPluginSettings($getValues);
         }
 }
