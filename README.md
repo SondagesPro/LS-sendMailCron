@@ -22,6 +22,7 @@ Plugin use 2 system for logging :
 - echo at console what happen : then you can use cron system to send an email, or test the plugin : error and info was echoed
 - use [Yii::log](http://www.yiiframework.com/doc/guide/1.1/en/topics.logging) : 3 state : error, info and trace. Loggued as application.plugins.sendMailCron
   - Exemple of logging system:
+
   ````
       'log' => array(
           'routes' => array(
@@ -37,6 +38,7 @@ Plugin use 2 system for logging :
           )
       ),
   ````
+
   - The log file is, by default ./tmp/runtime/application.log
   - To have more information on mail error : you must enable 'SMTP debug mode' in LimeSurvey instance global settings
 
