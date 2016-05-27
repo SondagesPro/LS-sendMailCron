@@ -3,10 +3,10 @@ Allow to send token email (invite or reminder) via PHP cli . This allow top use 
 
 ## Installation
 
-- This plugin is only tested with LimeSUrvey 2.06. Can be compatible with 2.05 or 2.50 and more.
+- This plugin is only tested with LimeSurvey 2.06. Tested on some 2.50 build (always use latest build if possible)
 
 ### Via GIT
-- Go to your LimeSurvey Directory (version up to 2.06)
+- Go to your LimeSurvey Directory (version up to 2.06, build 150729)
 - Clone in plugins/sendMailCron directory
 
 ### Via ZIP dowload
