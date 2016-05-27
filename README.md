@@ -9,6 +9,11 @@ Allow to send token email (invite or reminder) via PHP cli . This allow top use 
 - Go to your LimeSurvey Directory (version up to 2.06, build 150729)
 - Clone in plugins/sendMailCron directory
 
+### Via ZIP dowload
+- Get the file at http://extensions.sondages.pro/IMG/auto/sendMailCron.zip
+- Extract : `unzip sendMailCron.zip`
+- Move the directory to plugins/ directory inside LimeSUrvey
+
 ## Usage
 
 - When activated the plugin settings are updated to use the actual url for email. This can be updated at any time
@@ -42,9 +47,7 @@ Plugin use 2 system for logging :
       ),
   ````
 
-### Via ZIP dowload
-- Get the file and uncompress it
-- Move the file included to plugins/sendMailCron directory
+
 
 ## Home page & Copyright
 - HomePage <http://extensions.sondages.pro/>
