@@ -26,8 +26,7 @@ class sendMailCron extends PluginBase
     static protected $description = 'Allow to send token email by cron or sheduled task';
     static protected $name = 'sendMailCron';
 
-    private $txtReport;
-    private $debug= 3;// Minimum:0 (ERROR) 1: INFO, 2 : DEBUG
+    private $debug= 2;// Minimum:0 (ERROR) 1: INFO, 2 : DEBUG
 
     protected $settings = array(
         'information' => array(
@@ -116,7 +115,7 @@ class sendMailCron extends PluginBase
                     ':now2' => self::dateShifted(date("Y-m-d H:i:s"))
                 )
             );
-        // Unsire we need whole ... to be fixed
+        // Unsure we need whole ... to be fixed
         Yii::import('application.helpers.common_helper', true);
         Yii::import('application.helpers.surveytranslator_helper', true);
         Yii::import('application.helpers.replacements_helper', true);
@@ -133,6 +132,7 @@ class sendMailCron extends PluginBase
             {
                 $iSurvey=$oSurvey->sid;
                 if(tableExists("{{tokens_{$iSurvey}}}")){
+                    $this->log("Send email for {$iSurvey}",1);
                     // Fill some information for this
                     $this->sendEMails($iSurvey,'invite');
                     $this->sendEMails($iSurvey,'remind');
@@ -254,12 +254,12 @@ class sendMailCron extends PluginBase
                 $oCriteria->addCondition("remindercount < :remindercount  OR remindercount = '' OR remindercount IS NULL");// No other reminder
             $oCriteria->addCondition("(completed = 'N' OR completed = '' OR completed  IS NULL)");
             $oCriteria->addCondition("usesleft>0");
-            $oCriteria->addCondition("(validfrom < :validfrom OR validfrom IS NULL OR validfrom='0000-00-00 00:00:00')");
-            $oCriteria->addCondition("(validuntil > :validuntil OR validuntil IS NULL OR validuntil='0000-00-00 00:00:00')");
+            $oCriteria->addCondition("(validfrom < :validfrom OR validfrom IS NULL)");
+            $oCriteria->addCondition("(validuntil > :validuntil OR validuntil IS NULL)");
             if($sType=='invite')
                     $oCriteria->params = array(':validfrom'=>$dFrom,':validuntil'=>$dTomorrow);
             if($sType=='remind')
-                    $oCriteria->params = array(':validfrom'=>$dFrom,':validuntil'=>$dTomorrow,':sent'=>$dAfterSent,':remindercount'=>$maxReminder);
+                    $oCriteria->params = array(':validfrom'=>$dFrom,':validuntil'=>$dTomorrow,':sent'=>strval($dAfterSent),':remindercount'=>$maxReminder);
             # Send invite
             // Find all token
             $oTokens=TokenDynamic::model($iSurvey)->findAll($oCriteria);
@@ -311,6 +311,7 @@ class sendMailCron extends PluginBase
                         $message = str_replace("@@{$key}@@", $url, $message);
                     }
                     if(!$bSurveySimulate){
+                        global $maildebug;
                         if (SendEmailMessage($message, $subject, $sTo, $sFrom, Yii::app()->getConfig("sitename"), $bHtml, $sBounce, array(), $aCustomHeaders)){
                             $iSendedMail++;
                             $oCommand=Yii::app()->db->createCommand();
@@ -336,7 +337,11 @@ class sendMailCron extends PluginBase
                                 );
                             }
                         }else{
-                            $this->log("Unlnow error when send emait to {$sTo} ({$iSurvey})");// Ajoute erreur
+                            if($maildebug){
+                                $this->log("Unknow error when send email to {$sTo} ({$iSurvey}) : ".$maildebug);
+                            }else{
+                                $this->log("Unknow error when send email to {$sTo} ({$iSurvey})");// Ajoute erreur
+                            }
                             $iErrorMail++;
                         }
                     }else{
@@ -369,36 +374,26 @@ class sendMailCron extends PluginBase
         */
         private function log($sLog,$bState=0,$tab=true){
             // Play with DEBUG : ERROR/LOG/DEBUG
+            $sNow=date(DATE_ATOM);
+            switch ($bState){
+                case 0:
+                    $sLevel='error';
+                    $sLogLog="[ERROR] $sLog";
+                    break;
+                case 1:
+                    $sLevel='info';
+                    $sLogLog="[INFO] $sLog";
+                    break;
+                default:
+                    $sLevel='trace';
+                    $sLogLog="[DEBUG] $sLog";
+                    break;
+            }
+            Yii::log($sLog, $sLevel,'application.plugins.sendMailCron');
             if($bState < $this->debug || $bState==0)
             {
-                $sNow=date(DATE_ATOM);
-                switch ($bState){
-                    case 0:
-                        $sLogLog="[ERROR] $sLog";
-                        break;
-                    case 1:
-                        $sLogLog="[INFO] $sLog";
-                        break;
-                    default:
-                        $sLogLog="[DEBUG] $sLog";
-                        break;
-                }
-                //file_put_contents($sLogFile, "[{$sNow}] {$sLogLog}\n", FILE_APPEND | LOCK_EX);
                 echo "[{$sNow}] {$sLogLog}\n";
             }
-            if($bState==0){// Send only the ERROR
-                if($tab)
-                    $this->txtReport.="\t*Error* : {$sLog}.\n";
-                else
-                    $this->txtReport.="*Error* : {$sLog}.\n";
-            }
-            if($bState==1){// Send the INFO
-                if($tab)
-                    $this->txtReport.="\t{$sLog}.\n";
-                else
-                    $this->txtReport.="{$sLog}.\n";
-            }
-            //echo $this->txtReport;
         }
 
         /**

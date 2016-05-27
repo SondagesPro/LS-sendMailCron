@@ -9,6 +9,37 @@ Allow to send token email (invite or reminder) via PHP cli . This allow top use 
 - Go to your LimeSurvey Directory (version up to 2.06, build 150729)
 - Clone in plugins/sendMailCron directory
 
+## Usage
+
+- When activated the plugin settings are updated to use the actual url for email. This can be updated at any time
+- You can choose
+  - Max number of email to send
+  - Minimum delay between invitation and first reminder
+  - Minimum delay between each reminders
+
+### Logging
+Plugin use 2 system for logging :
+- echo at console what happen : then you can use cron system to send an email, or test the plugin : error and info was echoed
+- use [Yii::log](http://www.yiiframework.com/doc/guide/1.1/en/topics.logging) : 3 state : error, info and trace. Loggued as application.plugins.sendMailCron
+
+Exemple of logging system:
+````
+    'log' => array(
+        'routes' => array(
+            'fileError' => array(
+                'class' => 'CFileLogRoute',
+                'levels' => 'warning, error',
+            ),
+            'sendMailCron' => array(
+                'class' => 'CFileLogRoute',
+                'levels' => 'info, warning, error',
+                'categories'=>'application.plugins.sendMailCron',
+            ),
+        )
+    ),
+````
+The log file is, by default ./tmp/runtime/application.log
+
 ### Via ZIP dowload
 - Get the file and uncompress it
 - Move the file included to plugins/sendMailCron directory
