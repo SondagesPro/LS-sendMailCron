@@ -12,7 +12,7 @@ Allow to send token email (invite or reminder) via PHP cli . This allow top use 
 ### Via ZIP dowload
 - Get the file at http://extensions.sondages.pro/IMG/auto/sendMailCron.zip
 - Extract : `unzip sendMailCron.zip`
-- Move the directory to plugins/ directory inside LimeSUrvey
+- Move the directory to plugins/ directory inside LimeSurvey
 
 ## Usage
 
