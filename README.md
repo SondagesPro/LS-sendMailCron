@@ -19,11 +19,11 @@ Allow to send token email (invite or reminder) via PHP cli . This allow top use 
 - When activated the plugin settings are updated to use the actual url for email. This can be updated at any time
 - You can choose
   - Max number of email to send
-  - Minimum delay between invitation and first reminder
-  - Minimum delay between each reminders
+  - Minimum delay in days between invitation and first reminder
+  - Minimum delay in days between each reminder
 
 ### Logging
-Plugin use 2 system for logging :
+Plugin use 2 systems for logging :
 - echo at console what happen : then you can use cron system to send an email, or test the plugin : error and info was echoed
 - use [Yii::log](http://www.yiiframework.com/doc/guide/1.1/en/topics.logging) : 3 state : error, info and trace. Loggued as application.plugins.sendMailCron
   - The log file is, by default ./tmp/runtime/application.log
