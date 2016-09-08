@@ -7,7 +7,7 @@
  * @copyright 2016 Denis Chenu <http://www.sondages.pro>
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com>
  * @license GPL v3
- * @version 0.0.1
+ * @version 0.1.0
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -133,6 +133,7 @@ class sendMailCron extends PluginBase
                 $iSurvey=$oSurvey->sid;
                 if(tableExists("{{tokens_{$iSurvey}}}")){
                     $this->log("Send email for {$iSurvey}",1);
+                    Yii::app()->setConfig('surveyID',$iSurvey);
                     // Fill some information for this
                     $this->sendEMails($iSurvey,'invite');
                     $this->sendEMails($iSurvey,'remind');
