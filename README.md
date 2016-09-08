@@ -21,6 +21,8 @@ Allow to send token email (invite or reminder) via PHP cli . This allow top use 
   - Max number of email to send
   - Minimum delay between invitation and first reminder
   - Minimum delay between each reminders
+- To test the plugin you need to call it via PHP Cli `php yourlimesurveydir/application/commands/console.php plugin cron --interval=1`
+- This line can be added in your crontab or Task Scheduler
 
 ### Logging
 Plugin use 2 system for logging :
