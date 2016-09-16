@@ -1,5 +1,5 @@
 # Send token email via PHP Cli
-Allow to send token email (invite or reminder) via PHP cli . This allow top use crontab or Scheduled task to send email.
+Allow to send token email (invite or reminder) via PHP cli . This allow to use crontab or Scheduled task to send email.
 
 ## Installation
 
@@ -21,7 +21,7 @@ Allow to send token email (invite or reminder) via PHP cli . This allow top use 
   - Max number of email to send
   - Minimum delay between invitation and first reminder
   - Minimum delay between each reminders
-- To test the plugin you need to call it via PHP Cli `php yourlimesurveydir/application/commands/console.php plugin cron --interval=1`
+- To test the plugin you need to call it via PHP Cli `php yourlimesurveydir/application/commands/console.php plugin cron --interval=1` (remind: it send email in this way)
 - This line can be added in your crontab or Task Scheduler
 
 ### Logging
