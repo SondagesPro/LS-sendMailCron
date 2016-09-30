@@ -7,7 +7,7 @@
  * @copyright 2016 Denis Chenu <http://www.sondages.pro>
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com>
  * @license GPL v3
- * @version 0.1.0
+ * @version 0.1.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -268,7 +268,7 @@ class sendMailCron extends PluginBase
             {
                 $oToken=TokenDynamic::model($iSurvey)->findByPk($iToken->tid);
                 $this->log("Send : {$oToken->email} pour {$iSurvey}",2);
-                if (filter_var($oToken->email, FILTER_VALIDATE_EMAIL)) {
+                if (filter_var(trim($oToken->email), FILTER_VALIDATE_EMAIL)) {
                     $sLanguage = trim($oToken->language);
                     if (!in_array($sLanguage,$aSurveyLangs))
                     {
