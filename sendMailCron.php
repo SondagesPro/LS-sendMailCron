@@ -31,7 +31,7 @@ class sendMailCron extends PluginBase
     protected $settings = array(
         'information' => array(
             'type' => 'info',
-            'content' => 'Need activate cron system in the server : php yourlimesurveydir/application/commands/console.php plugin cron --interval=X where X is interval in minutes',
+            'content' => 'You need activate cron system in the server : <code>php yourlimesurveydir/application/commands/console.php plugin cron --interval=1</code>. This plugin don\'t use interval, all email of all surveys are tested when cron happen.',
         ),
         'hostInfo' => array(
             'type' => 'string',
