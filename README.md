@@ -4,6 +4,7 @@ Allow to send token email (invite or reminder) via PHP cli . This allow to use c
 ## Installation
 
 - This plugin is only tested with LimeSurvey 2.06. Tested on some 2.50 build (always use latest build if possible)
+- In some LimeSurvey version : you need to manually create the `./application/runtime` to use CFileLogRoute (LimeSurvey issue).
 
 ### Via GIT
 - Go to your LimeSurvey Directory (version up to 2.06, build 150729)
