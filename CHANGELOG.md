@@ -1,6 +1,12 @@
 # Change Log
 Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSurvey-plugin/sendMailCron/commits/master) show all changelog.
 
+## [0.2.0] - 2016-12-14
+- This version is ditributed in Affero General Public License
+### Feature ###
+- Allow different settings by survey
+- Add a global batch file size
+
 ## [0.1.1] - 2016-09-17
 ### Fix ###
 - trim email before validate

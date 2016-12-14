@@ -56,7 +56,7 @@ Plugin use 2 system for logging :
 - HomePage <http://extensions.sondages.pro/>
 - Copyright © 2016 Denis Chenu <http://sondages.pro>
 - Copyright © 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com>
-- Licence : GNU General Public License <https://www.gnu.org/licenses/gpl-3.0.html>
+- Licence : GNU Affero General Public License <https://www.gnu.org/licenses/gpl-3.0.html>
 
 ## Support
 - Issues <https://git.framasoft.org/SondagePro-LimeSurvey-plugin/sendMailCron>
