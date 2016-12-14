@@ -5,12 +5,12 @@
  *
  * @author Denis Chenu <denis@sondages.pro>
  * @copyright 2016 Denis Chenu <http://www.sondages.pro>
- * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com>
- * @license GPL v3
+ * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> for the 0.1.0 version
+ * @license AGPL v3
  * @version 0.2.0
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -26,12 +26,29 @@ class sendMailCron extends PluginBase
     static protected $description = 'Allow to send token email by cron or sheduled task';
     static protected $name = 'sendMailCron';
 
-    private $debug= 1;// Minimum:0 (ERROR) 1: INFO, 2 : DEBUG
+    /**
+     * @var int debug (for echoing on terminal) 0=>ERROR,1=>INFO, 2=>DEBUG
+     */
+    private $debug= 2;
+
+    /**
+     * @var int currentBatchSize Count for this batch
+     */
+    private $currentBatchSize=0;
 
     protected $settings = array(
         'information' => array(
             'type' => 'info',
             'content' => 'You need activate cron system in the server : <code>php yourlimesurveydir/application/commands/console.php plugin cron --interval=1</code>. This plugin don\'t use interval, all email of all surveys are tested when cron happen.',
+        ),
+        'maxBatchSize' => array(
+            'type'=>'int',
+            'htmlOptions'=>array(
+                'min'=>1,
+            ),
+            'label'=>"Max email to send globally (max batch size).",
+            'help'=>'Leave empty to send all available email on each cron',
+            'default'=>'',
         ),
         'hostInfo' => array(
             'type' => 'string',
@@ -66,7 +83,7 @@ class sendMailCron extends PluginBase
             'htmlOptions'=>array(
                 'min'=>1,
             ),
-            'label'=>"Min delay between reminders.",
+            'label'=>"Min delay between each reminders.",
             'default'=>7,
         ),
     );
@@ -119,26 +136,26 @@ class sendMailCron extends PluginBase
                 'maxEmail' => array(
                     'type'=>'int',
                     'htmlOptions'=>array(
-                        'min'=>-1,
+                        'min'=>0,
                     ),
-                    'label'=>"Max email to send (invitation + remind), set it to 0 to deactivate sending of email, set to -1 to use default.",
-                    'current'=>$this->get('maxEmail', 'Survey', $iSurveyId,-1),
+                    'label'=>"Max email to send (invitation + remind), set it to 0 to deactivate sending of email, leave empty to use default.",
+                    'current'=>$this->get('maxEmail', 'Survey', $iSurveyId,""),
                 ),
                 'delayInvitation' => array(
                     'type'=>'int',
                     'htmlOptions'=>array(
-                        'min'=>0,
+                        'min'=>1,
                     ),
-                    'label'=>"Min delay between invitation and first reminder (0 for default).",
-                    'current'=>$this->get('delayInvitation', 'Survey', $iSurveyId,0),
+                    'label'=>"Min delay between invitation and first reminder (empty for default).",
+                    'current'=>$this->get('delayInvitation', 'Survey', $iSurveyId,""),
                 ),
                 'delayReminder' => array(
                     'type'=>'int',
                     'htmlOptions'=>array(
-                        'min'=>0,
+                        'min'=>1,
                     ),
-                    'label'=>"Min delay between reminders (0 for default).",
-                    'current'=>$this->get('delayReminder', 'Survey', $iSurveyId,0),
+                    'label'=>"Min delay between reminders (empty for default).",
+                    'current'=>$this->get('delayReminder', 'Survey', $iSurveyId,""),
                 ),
             );
             if($oSurvey->anonymized!="Y"){
@@ -171,6 +188,7 @@ class sendMailCron extends PluginBase
     public function sendMailByCron()
     {
         $this->setConfigs();
+        $maxBatchSize=$this->getSetting('maxBatchSize',null,null,'');
 
         $oSurveys=Survey::model()->findAll(
             "active = 'Y' AND (startdate <= :now1 OR startdate IS NULL) AND (expires >= :now2 OR expires IS NULL)",
@@ -184,9 +202,8 @@ class sendMailCron extends PluginBase
         Yii::import('application.helpers.surveytranslator_helper', true);
         Yii::import('application.helpers.replacements_helper', true);
         Yii::import('application.helpers.expressions.em_manager_helper', true);
-        // Fix the url
+        // Fix the url @todo parse url and validate
         Yii::app()->request->hostInfo=$this->getSetting("hostInfo");
-        // Need to parse url and test
         Yii::app()->request->baseUrl=$this->getSetting("baseUrl");
         Yii::app()->request->scriptUrl=$this->getSetting("scriptUrl");
 
@@ -197,11 +214,19 @@ class sendMailCron extends PluginBase
                 $iSurvey=$oSurvey->sid;
                 if(tableExists("{{tokens_{$iSurvey}}}"))
                 {
-                    $this->log("sendMailByCron for {$iSurvey}",1);
-                    Yii::app()->setConfig('surveyID',$iSurvey);
-                    // Fill some information for this
-                    $this->sendEMails($iSurvey,'invite');
-                    $this->sendEMails($iSurvey,'remind');
+                    if(!$maxBatchSize || $maxBatchSize>=$this->currentBatchSize){
+                        $this->log("sendMailByCron for {$iSurvey}",1);
+                        Yii::app()->setConfig('surveyID',$iSurvey);
+                        // Fill some information for this
+                        $this->sendEmails($iSurvey,'invite');
+                        if(!$maxBatchSize || $maxBatchSize>=$this->currentBatchSize){
+                            $this->sendEmails($iSurvey,'remind');
+                        }else{
+                            $this->log("sendMailByCron reminder deactivated for {$iSurvey} due to batch size",1);
+                        }
+                    }else{
+                        $this->log("sendMailByCron deactivated for {$iSurvey} due to batch size",1);
+                    }
                 }
             }
         }
@@ -264,6 +289,7 @@ class sendMailCron extends PluginBase
     {
         // For the log
         $iSendedMail=$iInvalidMail=$iErrorMail=$iAlreadyStarted=0;
+        $maxBatchSize=$this->getSetting('maxBatchSize',null,null,'');
         $bHtml = (getEmailFormat($iSurvey) == 'html');
         $oSurvey=Survey::model()->findByPk($iSurvey);
         $aSurveyLangs = Survey::model()->findByPk($iSurvey)->additionalLanguages;
@@ -290,10 +316,11 @@ class sendMailCron extends PluginBase
         $sBounce=getBounceEmail($iSurvey);
         $dtToday=strtotime($dToday);
         $dFrom=$dToday;
-        $maxReminder=intval($this->getSetting('maxEmail','survey',$iSurvey,-1));
-        if($maxReminder<0){
-            $maxReminder=intval($this->getSetting('maxEmail',null,null,$this->settings['maxEmail']['default']));
+        $maxReminder=$this->getSetting('maxEmail','survey',$iSurvey,"");
+        if($maxReminder==""){
+            $maxReminder=$this->getSetting('maxEmail',null,null,$this->settings['maxEmail']['default']);
         }
+        $maxReminder=intval($maxReminder);
         $maxReminder--;
         if($sType=='invite' && $maxReminder < 0)
         {
@@ -305,13 +332,20 @@ class sendMailCron extends PluginBase
             $this->log("Survey {$iSurvey}, {$sType} deactivated",1);
             return;
         }
-        $delayInvitation=intval($this->getSetting('delayInvitation','survey',$iSurvey,0));
-        if($delayInvitation<1){
+        $delayInvitation=$this->getSetting('delayInvitation','survey',$iSurvey,"");
+        if($delayInvitation==""){
             $delayInvitation=$this->getSetting('delayInvitation',null,null,$this->settings['delayInvitation']['default']);
         }
-        $dayDelayReminder=intval($this->getSetting('delayReminder','survey',$iSurvey,0));
-        if($dayDelayReminder<1){
+        $delayInvitation=intval($delayInvitation);
+        $dayDelayReminder=$this->getSetting('delayReminder','survey',$iSurvey,"");
+        if($dayDelayReminder==""){
             $dayDelayReminder=$this->getSetting('delayReminder',null,null,$this->settings['delayReminder']['default']);
+        }
+        $dayDelayReminder=intval($dayDelayReminder);
+        if($sType=='remind' && ($delayInvitation < 1|| $dayDelayReminder < 1))
+        {
+            $this->log("Survey {$iSurvey}, {$sType} deactivated due to bad value in delays",1);
+            return;
         }
         $isNotAnonymous=$oSurvey->anonymized!="Y";
         $reminderOnlyNotStarted=$this->getSetting('reminderOnlyNotStarted', 'Survey', $iSurvey,0);
@@ -365,6 +399,11 @@ class sendMailCron extends PluginBase
                     continue;
                 }
             }
+            if($maxBatchSize && $maxBatchSize < $this->currentBatchSize){
+                $stillToSend=count($oTokens)-array_sum([$iSendedMail,$iInvalidMail,$iErrorMail,$iAlreadyStarted]);
+                $this->log("Batch size achieved for {$iSurvey} during {$sType}. {$stillToSend} email to send at next batch.",1);
+                return;
+            }
             $this->log("Send : {$oToken->email} ({$oToken->tid}) for {$iSurvey}",2);
             if (filter_var(trim($oToken->email), FILTER_VALIDATE_EMAIL)) {
                 $sLanguage = trim($oToken->language);
@@ -413,6 +452,7 @@ class sendMailCron extends PluginBase
                     global $maildebug;
                     if (SendEmailMessage($message, $subject, $sTo, $sFrom, Yii::app()->getConfig("sitename"), $bHtml, $sBounce, array(), $aCustomHeaders)){
                         $iSendedMail++;
+                        $this->currentBatchSize++;
                         $oCommand=Yii::app()->db->createCommand();
                         if($sType=='invite'){
                             $oCommand->update(
@@ -480,7 +520,7 @@ class sendMailCron extends PluginBase
     /**
     * log
     */
-    private function log($sLog,$bState=0,$tab=true){
+    private function log($sLog,$bState=0){
         // Play with DEBUG : ERROR/LOG/DEBUG
         $sNow=date(DATE_ATOM);
         switch ($bState){
@@ -541,4 +581,6 @@ class sendMailCron extends PluginBase
         }
         return parent::getPluginSettings($getValues);
     }
+
+
 }
