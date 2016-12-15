@@ -4,6 +4,11 @@ Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSur
 
 ## Unreleased
 
+### Feature
+
+- Batch size by surveys
+- Different batch size for reminder and invitation by surveys
+
 ### Fix
 
 - Add beforeTokenEmail event when send an email
@@ -12,7 +17,7 @@ Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSur
 
 - This version is ditributed in Affero General Public License
 
-### Featur
+### Feature
 
 - Allow different settings by survey
 - Add a global batch file size

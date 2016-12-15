@@ -35,6 +35,10 @@ class sendMailCron extends PluginBase
      * @var int currentBatchSize Count for this batch
      */
     private $currentBatchSize=0;
+    /**
+     * @var int SurveyBatchSize Count for this batch of actual survey
+     */
+    private $currentSurveyBatchSize;
 
     protected $settings = array(
         'information' => array(
@@ -138,7 +142,7 @@ class sendMailCron extends PluginBase
                     'htmlOptions'=>array(
                         'min'=>0,
                     ),
-                    'label'=>"Max email to send (invitation + remind), set it to 0 to deactivate sending of email, leave empty to use default.",
+                    'label'=>"Max email to send (invitation + remind) to each particpant, set it to 0 to deactivate sending of email, leave empty to use default.",
                     'current'=>$this->get('maxEmail', 'Survey', $iSurveyId,""),
                 ),
                 'delayInvitation' => array(
@@ -156,6 +160,31 @@ class sendMailCron extends PluginBase
                     ),
                     'label'=>"Min delay between reminders (empty for default).",
                     'current'=>$this->get('delayReminder', 'Survey', $iSurveyId,""),
+                ),
+                'maxSurveyBatchSize'=>array(
+                    'type'=>'int',
+                    'htmlOptions'=>array(
+                        'min'=>1,
+                    ),
+                    'label'=>"Max email to send (invitation + remind) in one batch for this survey, leave empty to use only global batch size.",
+                    'help'=>"In any condition, global batch size is take in account",
+                    'current'=>$this->get('maxSurveyBatchSize', 'Survey', $iSurveyId,""),
+                ),
+                'maxSurveyBatchSize_invite'=>array(
+                    'type'=>'int',
+                    'htmlOptions'=>array(
+                        'min'=>1,
+                    ),
+                    'label'=>"Max email to send for invitation in one batch for this survey, leave empty to use only global batch size or max survey batch size.",
+                    'current'=>$this->get('maxSurveyInvitationBatchSize', 'Survey', $iSurveyId,""),
+                ),
+                'maxReminderBatchSize_remind'=>array(
+                    'type'=>'int',
+                    'htmlOptions'=>array(
+                        'min'=>1,
+                    ),
+                    'label'=>"Max email to send for invitation in one batch for this survey, leave empty to use only global batch size or max survey batch size.",
+                    'current'=>$this->get('maxSurveyInvitationBatchSize', 'Survey', $iSurveyId,""),
                 ),
             );
             if($oSurvey->anonymized!="Y"){
@@ -218,9 +247,14 @@ class sendMailCron extends PluginBase
                         $this->log("sendMailByCron for {$iSurvey}",1);
                         Yii::app()->setConfig('surveyID',$iSurvey);
                         // Fill some information for this
+                        $this->currentSurveyBatchSize=0;
                         $this->sendEmails($iSurvey,'invite');
                         if(!$maxBatchSize || $maxBatchSize>=$this->currentBatchSize){
-                            $this->sendEmails($iSurvey,'remind');
+                            if(!$this->getSetting('maxSurveyBatchSize','Survey', $iSurvey) || $this->getSetting('maxSurveyBatchSize','Survey', $iSurvey)>=$this->currentBatchSize){
+                                $this->sendEmails($iSurvey,'remind');
+                            }else{
+                                $this->log("sendMailByCron reminder deactivated for {$iSurvey} due to survey batch size",1);
+                            }
                         }else{
                             $this->log("sendMailByCron reminder deactivated for {$iSurvey} due to batch size",1);
                         }
@@ -289,7 +323,7 @@ class sendMailCron extends PluginBase
     {
         // For the log
         $iSendedMail=$iInvalidMail=$iErrorMail=$iAlreadyStarted=0;
-        $maxBatchSize=$this->getSetting('maxBatchSize',null,null,'');
+        /* Get information */
         $bHtml = (getEmailFormat($iSurvey) == 'html');
         $oSurvey=Survey::model()->findByPk($iSurvey);
         $aSurveyLangs = Survey::model()->findByPk($iSurvey)->additionalLanguages;
@@ -317,7 +351,7 @@ class sendMailCron extends PluginBase
         $dtToday=strtotime($dToday);
         $dFrom=$dToday;
         $maxReminder=$this->getSetting('maxEmail','survey',$iSurvey,"");
-        if($maxReminder==""){
+        if($maxReminder===""){
             $maxReminder=$this->getSetting('maxEmail',null,null,$this->settings['maxEmail']['default']);
         }
         $maxReminder=intval($maxReminder);
@@ -387,8 +421,15 @@ class sendMailCron extends PluginBase
         # Send invite
         // Find all token
         $oTokens=TokenDynamic::model($iSurvey)->findAll($oCriteria);
+        $maxThisType=$this->getSetting('maxReminderBatchSize_'.$sType,'survey',$iSurvey,"");
         foreach ($oTokens as $iToken)
         {
+            /* Test actual sended */
+            if( $maxThisType && $iSendedMail >= $maxThisType){
+                $stillToSend=count($oTokens)-array_sum([$iSendedMail,$iInvalidMail,$iErrorMail,$iAlreadyStarted]);
+                $this->log("Survey {$iSurvey}, {$sType} survey batch size achieved. {$stillToSend} email to send at next batch.",1);
+                return;
+            }
             $oToken=TokenDynamic::model($iSurvey)->findByPk($iToken->tid);
             /* Find if need to already started or not */
             if($controlResponse){
@@ -399,9 +440,14 @@ class sendMailCron extends PluginBase
                     continue;
                 }
             }
-            if($maxBatchSize && $maxBatchSize < $this->currentBatchSize){
+            if($this->getSetting('maxBatchSize') && $this->getSetting('maxBatchSize') <= $this->currentBatchSize){
                 $stillToSend=count($oTokens)-array_sum([$iSendedMail,$iInvalidMail,$iErrorMail,$iAlreadyStarted]);
                 $this->log("Batch size achieved for {$iSurvey} during {$sType}. {$stillToSend} email to send at next batch.",1);
+                return;
+            }
+            if($this->getSetting('maxSurveyBatchSize','Survey', $iSurvey) && $this->getSetting('maxSurveyBatchSize','Survey', $iSurvey) <= $this->currentSurveyBatchSize){
+                $stillToSend=count($oTokens)-array_sum([$iSendedMail,$iInvalidMail,$iErrorMail,$iAlreadyStarted]);
+                $this->log("Batch survey size achieved for {$iSurvey} during {$sType}. {$stillToSend} email to send at next batch.",1);
                 return;
             }
             $this->log("Send : {$oToken->email} ({$oToken->tid}) for {$iSurvey}",2);
@@ -413,7 +459,7 @@ class sendMailCron extends PluginBase
                 }
 
                 $sToken=$oToken->token;
-                /* Arra of email adresses */
+                /* Array of email adresses */
                 $aTo=array();
                 $aEmailaddresses = preg_split( "/(,|;)/", $oToken->email );
                 foreach ($aEmailaddresses as $sEmailaddress)
@@ -457,7 +503,6 @@ class sendMailCron extends PluginBase
                 }
                 if(!$bSurveySimulate){
                     /* Add the event 'beforeSendEmail */
-                    $aTo=array($sTo);
                     $beforeTokenEmailEvent = new PluginEvent('beforeTokenEmail');
                     $beforeTokenEmailEvent->set('survey', $iSurvey);
                     $beforeTokenEmailEvent->set('type', $sType);
@@ -489,6 +534,7 @@ class sendMailCron extends PluginBase
                     if ($success){
                         $iSendedMail++;
                         $this->currentBatchSize++;
+                        $this->currentSurveyBatchSize++;
                         $oCommand=Yii::app()->db->createCommand();
                         if($sType=='invite'){
                             $oCommand->update(
