@@ -411,9 +411,16 @@ class sendMailCron extends PluginBase
                 {
                     $sLanguage = $sBaseLanguage;
                 }
-                // Construct the mail
+
                 $sToken=$oToken->token;
-                $sTo = "{$oToken->firstname} {$oToken->lastname} <{$oToken->email}>";
+                /* Arra of email adresses */
+                $aTo=array();
+                $aEmailaddresses = preg_split( "/(,|;)/", $oToken->email );
+                foreach ($aEmailaddresses as $sEmailaddress)
+                {
+                    $aTo[] = "{$oToken->firstname} {$oToken->lastname} <{$sEmailaddress}>";
+                }
+                /* Construct the mail content */
                 $aFieldsArray=array();
 
                 $aFieldsArray["{SURVEYNAME}"]=$aSurveys[$sLanguage]['surveyls_title'];
@@ -449,8 +456,37 @@ class sendMailCron extends PluginBase
                     $message = str_replace("@@{$key}@@", $url, $message);
                 }
                 if(!$bSurveySimulate){
+                    /* Add the event 'beforeSendEmail */
+                    $aTo=array($sTo);
+                    $beforeTokenEmailEvent = new PluginEvent('beforeTokenEmail');
+                    $beforeTokenEmailEvent->set('survey', $iSurvey);
+                    $beforeTokenEmailEvent->set('type', $sType);
+                    $beforeTokenEmailEvent->set('model', ($sType=='remind'?'reminder':'invitation'));
+                    $beforeTokenEmailEvent->set('subject', $subject);
+                    $beforeTokenEmailEvent->set('to',$aTo);
+                    $beforeTokenEmailEvent->set('body', $message);
+                    $beforeTokenEmailEvent->set('from', $sFrom);
+                    $beforeTokenEmailEvent->set('bounce', $sBounce);
+                    $beforeTokenEmailEvent->set('token', $oToken->attributes);
+                    App()->getPluginManager()->dispatchEvent($beforeTokenEmailEvent);
+                    $modsubject = $beforeTokenEmailEvent->get('subject');
+                    $modmessage = $beforeTokenEmailEvent->get('body');
+                    $aTo = $beforeTokenEmailEvent->get('to');
+                    $sFrom = $beforeTokenEmailEvent->get('from');
+                    $sBounce = $beforeTokenEmailEvent->get('bounce');
+                    /* send the email */
                     global $maildebug;
-                    if (SendEmailMessage($message, $subject, $sTo, $sFrom, Yii::app()->getConfig("sitename"), $bHtml, $sBounce, array(), $aCustomHeaders)){
+                    if ($beforeTokenEmailEvent->get('send', true) == false)
+                    {
+                        $maildebug = $beforeTokenEmailEvent->get('error', $maildebug);
+                        $success = $beforeTokenEmailEvent->get('error') == null;
+                    }
+                    else
+                    {
+                        $success = SendEmailMessage($message, $subject, $aTo, $sFrom, Yii::app()->getConfig("sitename"), $bHtml, $sBounce, array(), $aCustomHeaders);
+                    }
+                    /* action if email is sent */
+                    if ($success){
                         $iSendedMail++;
                         $this->currentBatchSize++;
                         $oCommand=Yii::app()->db->createCommand();
