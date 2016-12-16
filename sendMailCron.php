@@ -29,7 +29,12 @@ class sendMailCron extends PluginBase
     /**
      * @var int debug (for echoing on terminal) 0=>ERROR,1=>INFO, 2=>DEBUG
      */
-    private $debug= 2;
+    private $debug= 1;
+
+    /**
+     * @var boolean simulate sending (just log, no email sent)
+     */
+    private $simulate=false;
 
     /**
      * @var int currentBatchSize Count for this batch
@@ -344,7 +349,6 @@ class sendMailCron extends PluginBase
         $dYesterday=dateShift(date("Y-m-d H:i:s", time() - 86400), "Y-m-d H:i:s", Yii::app()->getConfig("timeadjust"));
         $dTomorrow=dateShift(date("Y-m-d H:i:s", time() + 86400), "Y-m-d H:i:s", Yii::app()->getConfig("timeadjust"));
         // Test si survey actif et avec bonne date $aSurveys[$sBaseLanguage]
-        $bSurveySimulate=false;
 
         $sFrom = "{$aSurveys[$sBaseLanguage]['admin']} <{$aSurveys[$sBaseLanguage]['adminemail']}>";
         $sBounce=getBounceEmail($iSurvey);
@@ -501,7 +505,7 @@ class sendMailCron extends PluginBase
                 {
                     $message = str_replace("@@{$key}@@", $url, $message);
                 }
-                if(!$bSurveySimulate){
+                if(!$this->simulate){
                     /* Add the event 'beforeSendEmail */
                     $beforeTokenEmailEvent = new PluginEvent('beforeTokenEmail');
                     $beforeTokenEmailEvent->set('survey', $iSurvey);

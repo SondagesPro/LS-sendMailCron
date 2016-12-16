@@ -8,6 +8,7 @@ Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSur
 
 - Batch size by surveys
 - Different batch size for reminder and invitation by surveys
+- Simulate system (need update code) for purpose testing
 
 ### Fix
 
