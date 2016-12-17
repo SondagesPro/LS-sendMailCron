@@ -431,6 +431,7 @@ class sendMailCron extends PluginBase
         // Find all token
         $oTokens=TokenDynamic::model($iSurvey)->findAll($oCriteria);
         $maxThisType=$this->getSetting('maxSurveyBatchSize_'.$sType,'survey',$iSurvey,"");
+        $this->log("Sending $sType",1);
         foreach ($oTokens as $iToken)
         {
             /* Test actual sended */
