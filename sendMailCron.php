@@ -29,10 +29,10 @@ class sendMailCron extends PluginBase
     /**
      * @var int debug (for echoing on terminal) 0=>ERROR,1=>INFO, 2=>DEBUG
      */
-    private $debug= 1;
+    private $debug= 2;
 
     /**
-     * @var boolean simulate sending (just log, no email sent)
+     * @var boolean simulate sending (for log)
      */
     private $simulate=false;
 
@@ -412,6 +412,9 @@ class sendMailCron extends PluginBase
             $oCriteria->addCondition("(sent < :sent)");
         if($sType=='remind')
             $oCriteria->addCondition("remindercount < :remindercount  OR remindercount = '' OR remindercount IS NULL");// No other reminder
+        if($sType=='remind'){ /* add order criteria */
+            $oCriteria->order="remindercount desc,sent asc";
+        }
         $oCriteria->addCondition("(completed = 'N' OR completed = '' OR completed  IS NULL)");
         $oCriteria->addCondition("usesleft>0");
         $oCriteria->addCondition("(validfrom < :validfrom OR validfrom IS NULL)");
@@ -447,11 +450,41 @@ class sendMailCron extends PluginBase
             if($this->getSetting('maxBatchSize') && $this->getSetting('maxBatchSize') <= $this->currentBatchSize){
                 $stillToSend=count($oTokens)-array_sum([$iSendedMail,$iInvalidMail,$iErrorMail,$iAlreadyStarted]);
                 $this->log("Batch size achieved for {$iSurvey} during {$sType}. {$stillToSend} email to send at next batch.",1);
+                if(!$iSendedMail && !$iErrorMail && !$iInvalidMail){
+                    $this->log("No message to sent",1);
+                }
+                if($iSendedMail){
+                    $this->log("{$iSendedMail} messages sent",1);
+                }
+                if($iInvalidMail){
+                    $this->log("{$iInvalidMail} invalid email adress",1);
+                }
+                if($iAlreadyStarted){
+                    $this->log("{$iAlreadyStarted} already started survey",1);
+                }
+                if($iErrorMail){
+                    $this->log("{$iErrorMail} messages with unknow error",1);
+                }
                 return;
             }
             if($this->getSetting('maxSurveyBatchSize','Survey', $iSurvey) && $this->getSetting('maxSurveyBatchSize','Survey', $iSurvey) <= $this->currentSurveyBatchSize){
                 $stillToSend=count($oTokens)-array_sum([$iSendedMail,$iInvalidMail,$iErrorMail,$iAlreadyStarted]);
                 $this->log("Batch survey size achieved for {$iSurvey} during {$sType}. {$stillToSend} email to send at next batch.",1);
+                if(!$iSendedMail && !$iErrorMail && !$iInvalidMail){
+                    $this->log("No message to sent",1);
+                }
+                if($iSendedMail){
+                    $this->log("{$iSendedMail} messages sent",1);
+                }
+                if($iInvalidMail){
+                    $this->log("{$iInvalidMail} invalid email adress",1);
+                }
+                if($iAlreadyStarted){
+                    $this->log("{$iAlreadyStarted} already started survey",1);
+                }
+                if($iErrorMail){
+                    $this->log("{$iErrorMail} messages with unknow error",1);
+                }
                 return;
             }
             $this->log("Send : {$oToken->email} ({$oToken->tid}) for {$iSurvey}",2);
@@ -601,8 +634,8 @@ class sendMailCron extends PluginBase
         if($iErrorMail){
             $this->log("{$iErrorMail} messages with unknow error",1);
         }
-
     }
+
     /**
     * log
     */

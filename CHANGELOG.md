@@ -13,6 +13,8 @@ Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSur
 ### Fix
 
 - Add beforeTokenEmail event when send an email
+- Better ordering for reminder
+- Return information even after batch size
 
 ## [0.2.0] - 2016-12-14
 
