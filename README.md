@@ -27,11 +27,23 @@ Allow to send token email (invite or reminder) via PHP cli . This allow to use c
 - To test the plugin you need to call it via PHP Cli `php yourlimesurveydir/application/commands/console.php plugin cron --interval=1` (remind: it send email in this way)
 - This line can be added in your crontab or Task Scheduler
 
+### Params
+
+The plugin accept 2 parameters in the command line to set debug and simulate
+
+- **debug** you can use this anonymous param in command sendMailCronDebug= to set the debug value
+- **simulate** you can use this anonymous param in command sendMailCronSimulate= to set the debug value
+
+Some example
+
+- `php yourlimesurveydir/application/commands/console.php plugin cron endMailCronDebug=0` nothing is printed to screen expet errors. Default is 1 : some information
+- `php yourlimesurveydir/application/commands/console.php plugin cron endMailCronDebug=3 sendMailCronSimulate=0` just to see what happen before put the command in the crontab, with all the trace of the plugin
+
 ### Logging
 Plugin use 2 system for logging :
 - echo at console what happen : then you can use cron system to send an email, or test the plugin : error and info was echoed
 - use [Yii::log](http://www.yiiframework.com/doc/guide/1.1/en/topics.logging) : 3 state : error, info and trace. Loggued as application.plugins.sendMailCron
-  - The log file is, by default ./tmp/runtime/application.log
+  - The log file is, by default ./tmp/runtime/application.log or ./application/runtime/application.log before LimeSurvey version 2.57.2
   - To have more information on mail error : you must enable 'SMTP debug mode' in LimeSurvey instance global settings
 
 #### Exemple of logging system:

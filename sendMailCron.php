@@ -29,7 +29,7 @@ class sendMailCron extends PluginBase
     /**
      * @var int debug (for echoing on terminal) 0=>ERROR,1=>INFO, 2=>DEBUG
      */
-    private $debug= 3;
+    private $debug= 1;
 
     /**
      * @var boolean simulate sending (for log)
@@ -222,6 +222,8 @@ class sendMailCron extends PluginBase
     public function sendMailByCron()
     {
         $this->setConfigs();
+        $this->setArgs();
+
         $maxBatchSize=$this->getSetting('maxBatchSize',null,null,'');
 
         $oSurveys=Survey::model()->findAll(
@@ -720,5 +722,22 @@ class sendMailCron extends PluginBase
         return parent::getPluginSettings($getValues);
     }
 
+    /**
+     * Set args by argument parameters, can not use named options (broke command console, then use anonymous with fixed string)
+     * @use $_SERVER
+     * @return void
+     */
+    private function setArgs()
+    {
+        $args=isset($_SERVER['argv']) ? $_SERVER['argv']:array();
+        foreach($args as $arg){
+            if(substr($arg, 0, strlen("sendMailCronDebug="))=="sendMailCronDebug="){
+                $this->debug=intval(substr($arg,strlen("sendMailCronDebug=")));
+            }
+            if(substr($arg, 0, strlen("sendMailCronSimulate="))=="sendMailCronSimulate="){
+                $this->simulate=boolval(substr($arg,strlen("sendMailCronSimulate=")));
+            }
+        }
+    }
 
 }
