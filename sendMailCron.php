@@ -223,7 +223,6 @@ class sendMailCron extends PluginBase
     {
         $this->setConfigs();
         $this->setArgs();
-
         $maxBatchSize=$this->getSetting('maxBatchSize',null,null,'');
 
         $oSurveys=Survey::model()->findAll(
@@ -329,7 +328,13 @@ class sendMailCron extends PluginBase
     private function sendEmails($iSurvey,$sType='invite')
     {
         // For the log
-        $iSendedMail=$iInvalidMail=$iErrorMail=$iAlreadyStarted=0;
+        $aCountMail=array(
+            'total'=>0,
+            'sent'=>0,
+            'invalid'=>0,
+            'error'=>0,
+            'started'=>0,
+        );
         /* Get information */
         $bHtml = (getEmailFormat($iSurvey) == 'html');
         $oSurvey=Survey::model()->findByPk($iSurvey);
@@ -430,29 +435,12 @@ class sendMailCron extends PluginBase
         # Send invite
         // Find all token
         $oTokens=TokenDynamic::model($iSurvey)->findAll($oCriteria);
-        $maxThisType=$this->getSetting('maxSurveyBatchSize_'.$sType,'survey',$iSurvey,"");
+        $aCountMail['total']=count($oTokens);
         $this->sendMailCronLog("Sending $sType",1);
         foreach ($oTokens as $iToken)
         {
             /* Test actual sended */
-            if( $maxThisType && $iSendedMail >= $maxThisType){
-                $stillToSend=count($oTokens)-array_sum([$iSendedMail,$iInvalidMail,$iErrorMail,$iAlreadyStarted]);
-                $this->sendMailCronLog("Survey {$iSurvey}, {$sType} survey batch size achieved. {$stillToSend} email to send at next batch.",1);
-                if(!$iSendedMail && !$iErrorMail && !$iInvalidMail){
-                    $this->sendMailCronLog("No message to sent",1);
-                }
-                if($iSendedMail){
-                    $this->sendMailCronLog("{$iSendedMail} messages sent",1);
-                }
-                if($iInvalidMail){
-                    $this->sendMailCronLog("{$iInvalidMail} invalid email adress",1);
-                }
-                if($iAlreadyStarted){
-                    $this->sendMailCronLog("{$iAlreadyStarted} already started survey",1);
-                }
-                if($iErrorMail){
-                    $this->sendMailCronLog("{$iErrorMail} messages with unknow error",1);
-                }
+            if($this->stopSendMailAction($aCountMail,$sType,$iSurvey)){
                 return;
             }
             $oToken=TokenDynamic::model($iSurvey)->findByPk($iToken->tid);
@@ -461,49 +449,9 @@ class sendMailCron extends PluginBase
                 $oResponse=SurveyDynamic::model($iSurvey)->find("token=:token",array(":token"=>$oToken->token));
                 if($oResponse){
                     $this->sendMailCronLog("Already started : {$oToken->email} ({$oToken->tid}) for {$iSurvey}",3);
-                    $iAlreadyStarted++;
+                    $aCountMail['started']++;
                     continue;
                 }
-            }
-            if($this->getSetting('maxBatchSize') && $this->getSetting('maxBatchSize') <= $this->currentBatchSize){
-                $stillToSend=count($oTokens)-array_sum([$iSendedMail,$iInvalidMail,$iErrorMail,$iAlreadyStarted]);
-                $this->sendMailCronLog("Batch size achieved for {$iSurvey} during {$sType}. {$stillToSend} email to send at next batch.",1);
-                if(!$iSendedMail && !$iErrorMail && !$iInvalidMail){
-                    $this->sendMailCronLog("No message to sent",1);
-                }
-                if($iSendedMail){
-                    $this->sendMailCronLog("{$iSendedMail} messages sent",1);
-                }
-                if($iInvalidMail){
-                    $this->sendMailCronLog("{$iInvalidMail} invalid email adress",1);
-                }
-                if($iAlreadyStarted){
-                    $this->sendMailCronLog("{$iAlreadyStarted} already started survey",1);
-                }
-                if($iErrorMail){
-                    $this->sendMailCronLog("{$iErrorMail} messages with unknow error",1);
-                }
-                return;
-            }
-            if($this->getSetting('maxSurveyBatchSize','Survey', $iSurvey) && $this->getSetting('maxSurveyBatchSize','Survey', $iSurvey) <= $this->currentSurveyBatchSize){
-                $stillToSend=count($oTokens)-array_sum([$iSendedMail,$iInvalidMail,$iErrorMail,$iAlreadyStarted]);
-                $this->sendMailCronLog("Batch survey size achieved for {$iSurvey} during {$sType}. {$stillToSend} email to send at next batch.",1);
-                if(!$iSendedMail && !$iErrorMail && !$iInvalidMail){
-                    $this->sendMailCronLog("No message to sent",1);
-                }
-                if($iSendedMail){
-                    $this->sendMailCronLog("{$iSendedMail} messages sent",1);
-                }
-                if($iInvalidMail){
-                    $this->sendMailCronLog("{$iInvalidMail} invalid email adress",1);
-                }
-                if($iAlreadyStarted){
-                    $this->sendMailCronLog("{$iAlreadyStarted} already started survey",1);
-                }
-                if($iErrorMail){
-                    $this->sendMailCronLog("{$iErrorMail} messages with unknow error",1);
-                }
-                return;
             }
             $this->sendMailCronLog("Send : {$oToken->email} ({$oToken->tid}) for {$iSurvey}",3);
             if (filter_var(trim($oToken->email), FILTER_VALIDATE_EMAIL)) {
@@ -556,7 +504,9 @@ class sendMailCron extends PluginBase
                 {
                     $message = str_replace("@@{$key}@@", $url, $message);
                 }
-                if(!$this->simulate){
+                if($this->simulate){
+                    $success=true;
+                }else{
                     /* Add the event 'beforeSendEmail */
                     $beforeTokenEmailEvent = new PluginEvent('beforeTokenEmail');
                     $beforeTokenEmailEvent->set('survey', $iSurvey);
@@ -585,12 +535,14 @@ class sendMailCron extends PluginBase
                     {
                         $success = SendEmailMessage($message, $subject, $aTo, $sFrom, Yii::app()->getConfig("sitename"), $bHtml, $sBounce, array(), $aCustomHeaders);
                     }
-                    /* action if email is sent */
-                    if ($success){
-                        $iSendedMail++;
-                        $this->currentBatchSize++;
-                        $this->currentSurveyBatchSize++;
-                        $oCommand=Yii::app()->db->createCommand();
+                }
+                /* action if email is sent */
+                if ($success){
+                    $aCountMail['sent']++;
+                    $this->currentBatchSize++;
+                    $this->currentSurveyBatchSize++;
+                    if(!$this->simulate){
+                    $oCommand=Yii::app()->db->createCommand();
                         if($sType=='invite'){
                             $oCommand->update(
                                 "{{tokens_{$iSurvey}}}",
@@ -612,17 +564,16 @@ class sendMailCron extends PluginBase
                                 array(":tid"=>$oToken->tid)
                             );
                         }
-                    }else{
-                        if($maildebug){
-                            $this->sendMailCronLog("Unknow error when send email to {$sTo} ({$iSurvey}) : ".$maildebug);
-                        }else{
-                            $this->sendMailCronLog("Unknow error when send email to {$sTo} ({$iSurvey})");
-                        }
-                        $iErrorMail++;
                     }
                 }else{
-                    $iSendedMail++;
+                    if($maildebug){
+                        $this->sendMailCronLog("Unknow error when send email to {$sTo} ({$iSurvey}) : ".$maildebug);
+                    }else{
+                        $this->sendMailCronLog("Unknow error when send email to {$sTo} ({$iSurvey})");
+                    }
+                    $iErrorMail++;
                 }
+
             }else{
                 $this->sendMailCronLog("invalid email : '{$oToken->email}' ({$oToken->tid}) for {$iSurvey}",2);
                 $iInvalidMail++;
@@ -637,21 +588,7 @@ class sendMailCron extends PluginBase
                 );
             }
         }
-        if(!$iSendedMail && !$iErrorMail && !$iInvalidMail){
-            $this->sendMailCronLog("No message to sent",1);
-        }
-        if($iSendedMail){
-            $this->sendMailCronLog("{$iSendedMail} messages sent",1);
-        }
-        if($iInvalidMail){
-            $this->sendMailCronLog("{$iInvalidMail} invalid email adress",1);
-        }
-        if($iAlreadyStarted){
-            $this->sendMailCronLog("{$iAlreadyStarted} already started survey",1);
-        }
-        if($iErrorMail){
-            $this->sendMailCronLog("{$iErrorMail} messages with unknow error",1);
-        }
+        $this->sendMailCronFinalLog($aCountMail);
     }
 
     /**
@@ -741,4 +678,53 @@ class sendMailCron extends PluginBase
         }
     }
 
+    /**
+     * Validate e send action
+     *
+     */
+    private function stopSendMailAction($aCountMail,$iSurvey,$sType)
+    {
+        $maxThisType=$this->getSetting('maxSurveyBatchSize_'.$sType,'survey',$iSurvey,"");
+        if( $maxThisType && $aCountMail['sent'] >= $maxThisType){
+            $stillToSend=$aCountMail['total']*2-array_sum($aCountMail);
+            $this->sendMailCronLog("Survey {$iSurvey}, {$sType} survey batch size achieved. {$stillToSend} email to send at next batch.",1);
+            return true;
+        }
+
+        if($this->getSetting('maxBatchSize') && $this->getSetting('maxBatchSize') <= $this->currentBatchSize){
+            $stillToSend=$aCountMail['total']*2-array_sum($aCountMail);
+            $this->sendMailCronLog("Batch size achieved for {$iSurvey} during {$sType}. {$stillToSend} email to send at next batch.",1);
+            $this->sendMailCronFinalLog($aCountMail);
+            return true;
+        }
+        if($this->getSetting('maxSurveyBatchSize','Survey', $iSurvey) && $this->getSetting('maxSurveyBatchSize','Survey', $iSurvey) <= $this->currentSurveyBatchSize){
+            $stillToSend=$aCountMail['total']*2-array_sum($aCountMail);
+            $this->sendMailCronLog("Batch survey size achieved for {$iSurvey} during {$sType}. {$stillToSend} email to send at next batch.",1);
+            $this->sendMailCronFinalLog($aCountMail);
+            return true;
+        }
+    }
+
+    /**
+     * Ending and return information according to sended after a send session
+     */
+    private function sendMailCronFinalLog($aCountMail)
+    {
+        if((array_sum($aCountMail)-$aCountMail['total'])==0){
+            $this->sendMailCronLog("No message to sent",1);
+        }else{
+            if($aCountMail['sent']){
+                $this->sendMailCronLog("{$aCountMail['sent']} messages sent",1);
+            }
+            if($aCountMail['invalid']){
+                $this->sendMailCronLog("{$aCountMail['invalid']} invalid email adress",1);
+            }
+            if($aCountMail['started']){
+                $this->sendMailCronLog("{$aCountMail['started']} already started survey",1);
+            }
+            if($aCountMail['error']){
+                $this->sendMailCronLog("{$aCountMail['error']} messages with unknow error",1);
+            }
+        }
+    }
 }

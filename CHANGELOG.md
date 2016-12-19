@@ -12,9 +12,10 @@ Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSur
 
 ### Fix
 
+- Better simulation
+- LimeSurvey 3.0 compatibility quick fix
 - Add beforeTokenEmail event when send an email
 - Better ordering for reminder
-- LimeSurvey 3.0 compatibility quick fix
 
 ## [0.2.0] - 2016-12-14
 
