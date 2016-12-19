@@ -6,6 +6,7 @@ Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSur
 
 ### Feature
 
+- Allow disable in command
 - Batch size by surveys
 - Different batch size for reminder and invitation by surveys
 - Allow debug and simulate system in command

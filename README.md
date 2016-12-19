@@ -29,15 +29,16 @@ Allow to send token email (invite or reminder) via PHP cli . This allow to use c
 
 ### Params
 
-The plugin accept 2 parameters in the command line to set debug and simulate
+The plugin accept optionnal parameters in the command line
 
-- **debug** you can use this anonymous param in command sendMailCronDebug= to set the debug value
-- **simulate** you can use this anonymous param in command sendMailCronSimulate= to set the debug value
+- **debug** level from 0 : nothing is shown except errors to 3 all action are shown sendMailCronDebug=3 (integer, default 1)
+- **simulate** action done by the plugin : don't send any email or update token : sendMailCronSimulate=1 (boolean, default false)
+- **disable** all action done by the plugin in command line : sendMailCronDisable=1 (boolean, default false)
 
 Some example
 
-- `php yourlimesurveydir/application/commands/console.php plugin cron endMailCronDebug=0` nothing is printed to screen expet errors. Default is 1 : some information
-- `php yourlimesurveydir/application/commands/console.php plugin cron endMailCronDebug=3 sendMailCronSimulate=0` just to see what happen before put the command in the crontab, with all the trace of the plugin
+- `php yourlimesurveydir/application/commands/console.php plugin cron endMailCronDebug=0` nothing is printed to screen except errors. By default show tested survey and action, and number of email send for each survey
+- `php yourlimesurveydir/application/commands/console.php plugin cron endMailCronDebug=3 sendMailCronSimulate=1` just to see what happen before put the command in the crontab, with all the trace of the plugin
 
 ### Logging
 Plugin use 2 system for logging :

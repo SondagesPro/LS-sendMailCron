@@ -37,6 +37,11 @@ class sendMailCron extends PluginBase
     private $simulate=false;
 
     /**
+     * @var boolean disable plugin (via command line)
+     */
+    private $disable=false;
+
+    /**
      * @var int currentBatchSize Count for this batch
      */
     private $currentBatchSize=0;
@@ -223,6 +228,9 @@ class sendMailCron extends PluginBase
     {
         $this->setConfigs();
         $this->setArgs();
+        if($this->disable){
+            return;
+        }
         $maxBatchSize=$this->getSetting('maxBatchSize',null,null,'');
 
         $oSurveys=Survey::model()->findAll(
@@ -674,6 +682,9 @@ class sendMailCron extends PluginBase
             }
             if(substr($arg, 0, strlen("sendMailCronSimulate="))=="sendMailCronSimulate="){
                 $this->simulate=boolval(substr($arg,strlen("sendMailCronSimulate=")));
+            }
+            if(substr($arg, 0, strlen("sendMailCronDisable="))=="sendMailCronDisable="){
+                $this->disable=boolval(substr($arg,strlen("sendMailCronDisable=")));
             }
         }
     }
