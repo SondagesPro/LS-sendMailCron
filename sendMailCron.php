@@ -30,12 +30,10 @@ class sendMailCron extends PluginBase
      * @var int debug (for echoing on terminal) 0=>ERROR,1=>INFO, 2=>DEBUG
      */
     private $debug= 1;
-
     /**
      * @var boolean simulate sending (for log)
      */
     private $simulate=false;
-
     /**
      * @var boolean disable plugin (via command line)
      */
@@ -99,6 +97,15 @@ class sendMailCron extends PluginBase
             ),
             'label'=>"Min delay between each reminders.",
             'default'=>7,
+        ),
+        'validateEmail' => array(
+            'type'=>'checkbox',
+            'value'=>1,
+            'htmlOption'=>array(
+                'uncheckValue'=>0
+            ),
+            'label'=>"Validate email before try to send it.",
+            'default'=>0,
         ),
     );
     /**
@@ -196,16 +203,42 @@ class sendMailCron extends PluginBase
                     'label'=>"Max email to send for invitation in one batch for this survey, leave empty to use only global batch size or max survey batch size.",
                     'current'=>$this->get('maxSurveyBatchSize_remind', 'Survey', $iSurveyId,""),
                 ),
+                'dayOfWeekToSend'=>array(
+
+                    'type'=>'select',
+                    'htmlOptions'=>array(
+                        'multiple'=>'multiple',
+                        'empty'=>'',
+                    ),
+                    'selectOptions'=>array(
+                        'placeholder' => gT('All week days'),
+                        'allowClear'=> true,
+                    ),
+                    'label'=>"Day of week for sending email.",
+                    'options'=>array(
+                        1=>gT("Monday"),
+                        2=>gT("Thursday"),
+                        3=>gT("Wednesday"),
+                        4=>gT("Thuesday"),
+                        5=>gT("Friday"),
+                        6=>gT("Saturday"),
+                        7=>gT("Sunday"),
+                    ),
+                    'current'=>$this->get('dayOfWeekToSend', 'Survey', $iSurveyId,array()),
+                ),
             );
             if($oSurvey->anonymized!="Y"){
-                $aSettings['reminderOnlyNotStarted']=array(
-                    'type'=>'checkbox',
-                    'value'=>1,
-                    'htmlOption'=>array(
-                        'uncheckValue'=>0
+                $aSettings['reminderOnlyTo']=array(
+                    'type'=>'select',
+                    'htmlOptions'=>array(
+                        'empty'=>gT("all participants"),
                     ),
-                    'label'=>"Send reminders only to user who not started survey.",
-                    'current'=>$this->get('reminderOnlyNotStarted', 'Survey', $iSurveyId,0),
+                    'options'=>array(
+                        'started'=>gT("participants who did not started survey."),
+                        'notstarted'=>gT("participants who started survey."),
+                    ),
+                    'label'=>"Send reminders to ",
+                    'current'=>$this->get('reminderOnlyTo', 'Survey', $iSurveyId,''),
                 );
             }
             $event->set("surveysettings.{$this->id}", array(
@@ -257,23 +290,31 @@ class sendMailCron extends PluginBase
                 $iSurvey=$oSurvey->sid;
                 if(tableExists("{{tokens_{$iSurvey}}}"))
                 {
+                    if($maxBatchSize && $maxBatchSize<=$this->currentBatchSize){
+                        $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} due to batch size",1);
+                        break;
+                    }
+                    $dayOfWeekToSend=$this->getSetting('dayOfWeekToSend','Survey', $iSurvey,"[]");
+
+                    $aDayOfWeekToSend=array_filter(json_decode($dayOfWeekToSend));
+                    $todayNum=(string)self::dateShifted(date("Y-m-d H:i:s"),"N");
+                    if(!empty($aDayOfWeekToSend) && !in_array($todayNum,$aDayOfWeekToSend)){
+                        $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} for today",1);
+                        break;
+                    }
+                    $this->sendMailCronLog("sendMailByCron for {$iSurvey}",1);
+                    Yii::app()->setConfig('surveyID',$iSurvey);
+                    // Fill some information for this
+                    $this->currentSurveyBatchSize=0;
+                    $this->sendEmails($iSurvey,'invite');
                     if(!$maxBatchSize || $maxBatchSize>=$this->currentBatchSize){
-                        $this->sendMailCronLog("sendMailByCron for {$iSurvey}",1);
-                        Yii::app()->setConfig('surveyID',$iSurvey);
-                        // Fill some information for this
-                        $this->currentSurveyBatchSize=0;
-                        $this->sendEmails($iSurvey,'invite');
-                        if(!$maxBatchSize || $maxBatchSize>=$this->currentBatchSize){
-                            if(!$this->getSetting('maxSurveyBatchSize','Survey', $iSurvey) || $this->getSetting('maxSurveyBatchSize','Survey', $iSurvey)>=$this->currentBatchSize){
-                                $this->sendEmails($iSurvey,'remind');
-                            }else{
-                                $this->sendMailCronLog("sendMailByCron reminder deactivated for {$iSurvey} due to survey batch size",1);
-                            }
+                        if(!$this->getSetting('maxSurveyBatchSize','Survey', $iSurvey) || $this->getSetting('maxSurveyBatchSize','Survey', $iSurvey)>=$this->currentBatchSize){
+                            $this->sendEmails($iSurvey,'remind');
                         }else{
-                            $this->sendMailCronLog("sendMailByCron reminder deactivated for {$iSurvey} due to batch size",1);
+                            $this->sendMailCronLog("sendMailByCron reminder deactivated for {$iSurvey} due to survey batch size",1);
                         }
                     }else{
-                        $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} due to batch size",1);
+                        $this->sendMailCronLog("sendMailByCron reminder deactivated for {$iSurvey} due to batch size",1);
                     }
                 }
             }
@@ -342,6 +383,7 @@ class sendMailCron extends PluginBase
             'invalid'=>0,
             'error'=>0,
             'started'=>0,
+            'notstarted'=>0,
         );
         /* Get information */
         $bHtml = (getEmailFormat($iSurvey) == 'html');
@@ -401,11 +443,11 @@ class sendMailCron extends PluginBase
             return;
         }
         $isNotAnonymous=$oSurvey->anonymized!="Y";
-        $reminderOnlyNotStarted=$this->getSetting('reminderOnlyNotStarted', 'Survey', $iSurvey,0);
-        if($reminderOnlyNotStarted && $isNotAnonymous){
-            $controlResponse=true;
+        $reminderOnlyTo=$this->getSetting('reminderOnlyTo', 'Survey', $iSurvey,'');
+        if($reminderOnlyTo && $isNotAnonymous){
+            $controlResponse=$reminderOnlyTo;
         }else{
-            $controlResponse=false;
+            $controlResponse='';
         }
         //~ if($sType=='invite')
             //~ $dFrom=date("Y-m-d H:i",strtotime("-".intval($this->config['inviteafter'])." days",$dtToday));// valid is 3 day before and up
@@ -455,136 +497,21 @@ class sendMailCron extends PluginBase
             /* Find if need to already started or not */
             if($controlResponse){
                 $oResponse=SurveyDynamic::model($iSurvey)->find("token=:token",array(":token"=>$oToken->token));
-                if($oResponse){
-                    $this->sendMailCronLog("Already started : {$oToken->email} ({$oToken->tid}) for {$iSurvey}",3);
+                if(!$oResponse && $controlResponse=='notstarted'){
+                    $this->sendMailCronLog("Not started survey : {$oToken->email} ({$oToken->tid}) for {$iSurvey}",3);
+                    $aCountMail['notstarted']++;
+                    continue;
+                }
+                if($oResponse && $controlResponse=='started'){
+                    $this->sendMailCronLog("Already started survey : {$oToken->email} ({$oToken->tid}) for {$iSurvey}",3);
                     $aCountMail['started']++;
                     continue;
                 }
+
             }
-            $this->sendMailCronLog("Send : {$oToken->email} ({$oToken->tid}) for {$iSurvey}",3);
-            if (filter_var(trim($oToken->email), FILTER_VALIDATE_EMAIL)) {
-                $sLanguage = trim($oToken->language);
-                if (!in_array($sLanguage,$aSurveyLangs))
-                {
-                    $sLanguage = $sBaseLanguage;
-                }
-
-                $sToken=$oToken->token;
-                /* Array of email adresses */
-                $aTo=array();
-                $aEmailaddresses = preg_split( "/(,|;)/", $oToken->email );
-                foreach ($aEmailaddresses as $sEmailaddress)
-                {
-                    $aTo[] = "{$oToken->firstname} {$oToken->lastname} <{$sEmailaddress}>";
-                }
-                /* Construct the mail content */
-                $aFieldsArray=array();
-
-                $aFieldsArray["{SURVEYNAME}"]=$aSurveys[$sLanguage]['surveyls_title'];
-                $aFieldsArray["{SURVEYDESCRIPTION}"]=$aSurveys[$sLanguage]['surveyls_description'];
-                $aFieldsArray["{SURVEYWELCOMETEXT}"]=$aSurveys[$sLanguage]['surveyls_welcometext'];
-                $aFieldsArray["{ADMINNAME}"]=$aSurveys[$sLanguage]['admin'];
-                $aFieldsArray["{ADMINEMAIL}"]=$aSurveys[$sLanguage]['adminemail'];
-                foreach ($oToken->attributes as $attribute=>$value)
-                {
-                    $aFieldsArray['{' . strtoupper($attribute) . '}'] =$value;
-                }
-                // Url Links
-                $aUrlsArray["OPTOUTURL"] = App()->createAbsoluteUrl("/optout/tokens",array('langcode'=>$sLanguage,'surveyid'=>$iSurvey,'token'=>$sToken));
-                $aUrlsArray["OPTINURL"] = App()->createAbsoluteUrl("/optin/tokens",array('langcode'=>$sLanguage,'surveyid'=>$iSurvey,'token'=>$sToken));
-                $aUrlsArray["SURVEYURL"] = App()->createAbsoluteUrl("/survey/index",array('sid'=>$iSurvey,'token'=>$sToken,'lang'=>$sLanguage));
-                foreach($aUrlsArray as $key=>$url)
-                {
-                    if ($bHtml)
-                        $aFieldsArray["{{$key}}"] = "<a href='{$url}'>" . htmlspecialchars($url) . '</a>';
-                    else
-                        $aFieldsArray["{{$key}}"] = $url;
-
-                }
-
-                $aCustomHeaders = array(
-                    '1' => "X-surveyid: " . $iSurvey,
-                    '2' => "X-tokenid: " . $sToken
-                );
-                $subject = Replacefields($sSubject[$sLanguage], $aFieldsArray);
-                $message = Replacefields($sMessage[$sLanguage], $aFieldsArray);
-                foreach($aUrlsArray as $key=>$url)
-                {
-                    $message = str_replace("@@{$key}@@", $url, $message);
-                }
-                if($this->simulate){
-                    $success=true;
-                }else{
-                    /* Add the event 'beforeSendEmail */
-                    $beforeTokenEmailEvent = new PluginEvent('beforeTokenEmail');
-                    $beforeTokenEmailEvent->set('survey', $iSurvey);
-                    $beforeTokenEmailEvent->set('type', $sType);
-                    $beforeTokenEmailEvent->set('model', ($sType=='remind'?'reminder':'invitation'));
-                    $beforeTokenEmailEvent->set('subject', $subject);
-                    $beforeTokenEmailEvent->set('to',$aTo);
-                    $beforeTokenEmailEvent->set('body', $message);
-                    $beforeTokenEmailEvent->set('from', $sFrom);
-                    $beforeTokenEmailEvent->set('bounce', $sBounce);
-                    $beforeTokenEmailEvent->set('token', $oToken->attributes);
-                    App()->getPluginManager()->dispatchEvent($beforeTokenEmailEvent);
-                    $modsubject = $beforeTokenEmailEvent->get('subject');
-                    $modmessage = $beforeTokenEmailEvent->get('body');
-                    $aTo = $beforeTokenEmailEvent->get('to');
-                    $sFrom = $beforeTokenEmailEvent->get('from');
-                    $sBounce = $beforeTokenEmailEvent->get('bounce');
-                    /* send the email */
-                    global $maildebug;
-                    if ($beforeTokenEmailEvent->get('send', true) == false)
-                    {
-                        $maildebug = $beforeTokenEmailEvent->get('error', $maildebug);
-                        $success = $beforeTokenEmailEvent->get('error') == null;
-                    }
-                    else
-                    {
-                        $success = SendEmailMessage($message, $subject, $aTo, $sFrom, Yii::app()->getConfig("sitename"), $bHtml, $sBounce, array(), $aCustomHeaders);
-                    }
-                }
-                /* action if email is sent */
-                if ($success){
-                    $aCountMail['sent']++;
-                    $this->currentBatchSize++;
-                    $this->currentSurveyBatchSize++;
-                    if(!$this->simulate){
-                    $oCommand=Yii::app()->db->createCommand();
-                        if($sType=='invite'){
-                            $oCommand->update(
-                                "{{tokens_{$iSurvey}}}",
-                                array(
-                                    'sent'=>dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i", Yii::app()->getConfig("timeadjust")),
-                                ),
-                                "tid=:tid",
-                                array(":tid"=>$oToken->tid)
-                            );
-                        }
-                        if($sType=='remind'){
-                            $oCommand->update(
-                                "{{tokens_{$iSurvey}}}",
-                                array(
-                                    'remindersent'=>dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i", Yii::app()->getConfig("timeadjust")),
-                                    'remindercount'=>$oToken->remindercount+1,
-                                ),
-                                "tid=:tid",
-                                array(":tid"=>$oToken->tid)
-                            );
-                        }
-                    }
-                }else{
-                    if($maildebug){
-                        $this->sendMailCronLog("Unknow error when send email to {$sTo} ({$iSurvey}) : ".$maildebug);
-                    }else{
-                        $this->sendMailCronLog("Unknow error when send email to {$sTo} ({$iSurvey})");
-                    }
-                    $iErrorMail++;
-                }
-
-            }else{
+            if ($this->getSetting('validateEmail',null,null,$this->settings['validateEmail']['default']) && !filter_var(trim($oToken->email), FILTER_VALIDATE_EMAIL)) {
                 $this->sendMailCronLog("invalid email : '{$oToken->email}' ({$oToken->tid}) for {$iSurvey}",2);
-                $iInvalidMail++;
+                $aCountMail['invalid']++;
                 $oCommand=Yii::app()->db->createCommand();
                 $oCommand->update(
                     "{{tokens_{$iSurvey}}}",
@@ -594,6 +521,126 @@ class sendMailCron extends PluginBase
                     "tid=:tid",
                     array(":tid"=>$iToken->tid)
                 );
+                continue;
+            }
+            $this->sendMailCronLog("Send : {$oToken->email} ({$oToken->tid}) for {$iSurvey}",3);
+            $sLanguage = trim($oToken->language);
+            if (!in_array($sLanguage,$aSurveyLangs))
+            {
+                $sLanguage = $sBaseLanguage;
+            }
+
+            $sToken=$oToken->token;
+            /* Array of email adresses */
+            $aTo=array();
+            $aEmailaddresses = preg_split( "/(,|;)/", $oToken->email );
+            foreach ($aEmailaddresses as $sEmailaddress)
+            {
+                $aTo[] = "{$oToken->firstname} {$oToken->lastname} <{$sEmailaddress}>";
+            }
+            /* Construct the mail content */
+            $aFieldsArray=array();
+
+            $aFieldsArray["{SURVEYNAME}"]=$aSurveys[$sLanguage]['surveyls_title'];
+            $aFieldsArray["{SURVEYDESCRIPTION}"]=$aSurveys[$sLanguage]['surveyls_description'];
+            $aFieldsArray["{SURVEYWELCOMETEXT}"]=$aSurveys[$sLanguage]['surveyls_welcometext'];
+            $aFieldsArray["{ADMINNAME}"]=$aSurveys[$sLanguage]['admin'];
+            $aFieldsArray["{ADMINEMAIL}"]=$aSurveys[$sLanguage]['adminemail'];
+            foreach ($oToken->attributes as $attribute=>$value)
+            {
+                $aFieldsArray['{' . strtoupper($attribute) . '}'] =$value;
+            }
+            // Url Links
+            $aUrlsArray["OPTOUTURL"] = App()->createAbsoluteUrl("/optout/tokens",array('langcode'=>$sLanguage,'surveyid'=>$iSurvey,'token'=>$sToken));
+            $aUrlsArray["OPTINURL"] = App()->createAbsoluteUrl("/optin/tokens",array('langcode'=>$sLanguage,'surveyid'=>$iSurvey,'token'=>$sToken));
+            $aUrlsArray["SURVEYURL"] = App()->createAbsoluteUrl("/survey/index",array('sid'=>$iSurvey,'token'=>$sToken,'lang'=>$sLanguage));
+            foreach($aUrlsArray as $key=>$url)
+            {
+                if ($bHtml)
+                    $aFieldsArray["{{$key}}"] = "<a href='{$url}'>" . htmlspecialchars($url) . '</a>';
+                else
+                    $aFieldsArray["{{$key}}"] = $url;
+
+            }
+
+            $aCustomHeaders = array(
+                '1' => "X-surveyid: " . $iSurvey,
+                '2' => "X-tokenid: " . $sToken
+            );
+            $subject = Replacefields($sSubject[$sLanguage], $aFieldsArray);
+            $message = Replacefields($sMessage[$sLanguage], $aFieldsArray);
+            foreach($aUrlsArray as $key=>$url)
+            {
+                $message = str_replace("@@{$key}@@", $url, $message);
+            }
+            if($this->simulate){
+                $success=true;
+            }else{
+                /* Add the event 'beforeSendEmail */
+                $beforeTokenEmailEvent = new PluginEvent('beforeTokenEmail');
+                $beforeTokenEmailEvent->set('survey', $iSurvey);
+                $beforeTokenEmailEvent->set('type', $sType);
+                $beforeTokenEmailEvent->set('model', ($sType=='remind'?'reminder':'invitation'));
+                $beforeTokenEmailEvent->set('subject', $subject);
+                $beforeTokenEmailEvent->set('to',$aTo);
+                $beforeTokenEmailEvent->set('body', $message);
+                $beforeTokenEmailEvent->set('from', $sFrom);
+                $beforeTokenEmailEvent->set('bounce', $sBounce);
+                $beforeTokenEmailEvent->set('token', $oToken->attributes);
+                App()->getPluginManager()->dispatchEvent($beforeTokenEmailEvent);
+                $modsubject = $beforeTokenEmailEvent->get('subject');
+                $modmessage = $beforeTokenEmailEvent->get('body');
+                $aTo = $beforeTokenEmailEvent->get('to');
+                $sFrom = $beforeTokenEmailEvent->get('from');
+                $sBounce = $beforeTokenEmailEvent->get('bounce');
+                /* send the email */
+                global $maildebug;
+                if ($beforeTokenEmailEvent->get('send', true) == false)
+                {
+                    $maildebug = $beforeTokenEmailEvent->get('error', $maildebug);
+                    $success = $beforeTokenEmailEvent->get('error') == null;
+                }
+                else
+                {
+                    $success = SendEmailMessage($message, $subject, $aTo, $sFrom, Yii::app()->getConfig("sitename"), $bHtml, $sBounce, array(), $aCustomHeaders);
+                }
+            }
+            /* action if email is sent */
+            if ($success){
+                $aCountMail['sent']++;
+                $this->currentBatchSize++;
+                $this->currentSurveyBatchSize++;
+                if(!$this->simulate){
+                $oCommand=Yii::app()->db->createCommand();
+                    if($sType=='invite'){
+                        $oCommand->update(
+                            "{{tokens_{$iSurvey}}}",
+                            array(
+                                'sent'=>dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i", Yii::app()->getConfig("timeadjust")),
+                            ),
+                            "tid=:tid",
+                            array(":tid"=>$oToken->tid)
+                        );
+                    }
+                    if($sType=='remind'){
+                        $oCommand->update(
+                            "{{tokens_{$iSurvey}}}",
+                            array(
+                                'remindersent'=>dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i", Yii::app()->getConfig("timeadjust")),
+                                'remindercount'=>$oToken->remindercount+1,
+                            ),
+                            "tid=:tid",
+                            array(":tid"=>$oToken->tid)
+                        );
+                    }
+                }
+            }else{
+                if($maildebug){
+                    $this->sendMailCronLog("Unknow error when send email to {$sTo} ({$iSurvey}) : ".$maildebug);
+                }else{
+                    $this->sendMailCronLog("Unknow error when send email to {$sTo} ({$iSurvey})");
+                }
+                $iErrorMail++;
             }
         }
         $this->sendMailCronFinalLog($aCountMail);
@@ -731,7 +778,10 @@ class sendMailCron extends PluginBase
                 $this->sendMailCronLog("{$aCountMail['invalid']} invalid email adress",1);
             }
             if($aCountMail['started']){
-                $this->sendMailCronLog("{$aCountMail['started']} already started survey",1);
+                $this->sendMailCronLog("{$aCountMail['started']} already started survey",2);
+            }
+            if($aCountMail['notstarted']){
+                $this->sendMailCronLog("{$aCountMail['started']} not started survey",2);
             }
             if($aCountMail['error']){
                 $this->sendMailCronLog("{$aCountMail['error']} messages with unknow error",1);
