@@ -38,8 +38,8 @@ The plugin accept optionnal parameters in the command line
 
 Some example
 
-- `php yourlimesurveydir/application/commands/console.php plugin cron endMailCronDebug=0` nothing is printed to screen except errors. By default show tested survey and action, and number of email send for each survey
-- `php yourlimesurveydir/application/commands/console.php plugin cron endMailCronDebug=3 sendMailCronSimulate=1` just to see what happen before put the command in the crontab, with all the trace of the plugin
+- `php yourlimesurveydir/application/commands/console.php plugin cron sendMailCronDebug=0` nothing is printed to screen except errors. By default show tested survey and action, and number of email send for each survey
+- `php yourlimesurveydir/application/commands/console.php plugin cron sendMailCronDebug=3 sendMailCronSimulate=1` just to see what happen before put the command in the crontab, with all the trace of the plugin
 
 ### Logging
 Plugin use 2 system for logging :
