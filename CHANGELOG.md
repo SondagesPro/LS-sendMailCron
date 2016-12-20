@@ -6,6 +6,7 @@ Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSur
 
 ### Feature
 
+- French version
 - Control day of week when sending email by survey
 - Allow to disable email validate before try to send
 - Batch size by surveys

@@ -48,6 +48,11 @@ class sendMailCron extends PluginBase
      */
     private $currentSurveyBatchSize;
 
+    /**
+     * @var \translate class
+     */
+    private $translate;
+
     protected $settings = array(
         'information' => array(
             'type' => 'info',
@@ -147,6 +152,9 @@ class sendMailCron extends PluginBase
 
     public function beforeSurveySettings()
     {
+        Yii::setPathOfAlias('sendMailCron', dirname(__FILE__));
+        Yii::import("sendMailCron.sendMailCronTranslate");
+        $this->translate = new sendMailCronTranslate;
         $event = $this->event;
         // Must control if token table exist
         $iSurveyId=$event->get('survey');
@@ -159,7 +167,8 @@ class sendMailCron extends PluginBase
                     'htmlOptions'=>array(
                         'min'=>0,
                     ),
-                    'label'=>"Max email to send (invitation + remind) to each particpant, set it to 0 to deactivate sending of email, leave empty to use default.",
+                    'label'=>$this->translate->gT("Max email to send (invitation + remind) to each particpant."),
+                    'help'=>$this->translate->gT("0 to deactivate sending of email, empty to use default"),
                     'current'=>$this->get('maxEmail', 'Survey', $iSurveyId,""),
                 ),
                 'delayInvitation' => array(
@@ -167,7 +176,8 @@ class sendMailCron extends PluginBase
                     'htmlOptions'=>array(
                         'min'=>1,
                     ),
-                    'label'=>"Min delay between invitation and first reminder (empty for default).",
+                    'label'=>$this->translate->gT("Min delay between invitation and first reminder."),
+                    'help'=>$this->translate->gT("Empty for default"),
                     'current'=>$this->get('delayInvitation', 'Survey', $iSurveyId,""),
                 ),
                 'delayReminder' => array(
@@ -175,7 +185,8 @@ class sendMailCron extends PluginBase
                     'htmlOptions'=>array(
                         'min'=>1,
                     ),
-                    'label'=>"Min delay between reminders (empty for default).",
+                    'label'=>$this->translate->gT("Min delay between reminders."),
+                    'help'=>$this->translate->gT("Empty for default"),
                     'current'=>$this->get('delayReminder', 'Survey', $iSurveyId,""),
                 ),
                 'maxSurveyBatchSize'=>array(
@@ -183,8 +194,8 @@ class sendMailCron extends PluginBase
                     'htmlOptions'=>array(
                         'min'=>1,
                     ),
-                    'label'=>"Max email to send (invitation + remind) in one batch for this survey, leave empty to use only global batch size.",
-                    'help'=>"In any condition, global batch size is take in account",
+                    'label'=>$this->translate->gT("Max email to send (invitation + remind) in one batch for this survey."),
+                    'help'=>$this->translate->gT("Leave empty to use only global batch size. In any condition, global batch size is take in account"),
                     'current'=>$this->get('maxSurveyBatchSize', 'Survey', $iSurveyId,""),
                 ),
                 'maxSurveyBatchSize_invite'=>array(
@@ -192,7 +203,8 @@ class sendMailCron extends PluginBase
                     'htmlOptions'=>array(
                         'min'=>1,
                     ),
-                    'label'=>"Max email to send for invitation in one batch for this survey, leave empty to use only global batch size or max survey batch size.",
+                    'label'=>$this->translate->gT("Max email to send for invitation in one batch for this survey."),
+                    'help'=>"The max email setting is always taken into account",
                     'current'=>$this->get('maxSurveyBatchSize_invite', 'Survey', $iSurveyId,""),
                 ),
                 'maxSurveyBatchSize_remind'=>array(
@@ -200,7 +212,8 @@ class sendMailCron extends PluginBase
                     'htmlOptions'=>array(
                         'min'=>1,
                     ),
-                    'label'=>"Max email to send for invitation in one batch for this survey, leave empty to use only global batch size or max survey batch size.",
+                    'label'=>$this->translate->gT("Max email to send for reminder in one batch for this survey."),
+                    'help'=>"The max email setting is always taken into account, reminders are sent after all new invitation",
                     'current'=>$this->get('maxSurveyBatchSize_remind', 'Survey', $iSurveyId,""),
                 ),
                 'dayOfWeekToSend'=>array(
@@ -211,18 +224,18 @@ class sendMailCron extends PluginBase
                         'empty'=>'',
                     ),
                     'selectOptions'=>array(
-                        'placeholder' => gT('All week days'),
+                        'placeholder' =>$this->translate->gT("All week days"),
                         'allowClear'=> true,
                     ),
-                    'label'=>"Day of week for sending email.",
+                    'label'=>$this->translate->gT("Day of week for sending email"),
                     'options'=>array(
-                        1=>gT("Monday"),
-                        2=>gT("Thursday"),
-                        3=>gT("Wednesday"),
-                        4=>gT("Thuesday"),
-                        5=>gT("Friday"),
-                        6=>gT("Saturday"),
-                        7=>gT("Sunday"),
+                        1=>$this->translate->gT("Monday"),
+                        2=>$this->translate->gT("Thursday"),
+                        3=>$this->translate->gT("Wednesday"),
+                        4=>$this->translate->gT("Thuesday"),
+                        5=>$this->translate->gT("Friday"),
+                        6=>$this->translate->gT("Saturday"),
+                        7=>$this->translate->gT("Sunday"),
                     ),
                     'current'=>$this->get('dayOfWeekToSend', 'Survey', $iSurveyId,array()),
                 ),
@@ -231,13 +244,13 @@ class sendMailCron extends PluginBase
                 $aSettings['reminderOnlyTo']=array(
                     'type'=>'select',
                     'htmlOptions'=>array(
-                        'empty'=>gT("all participants"),
+                        'empty'=>$this->translate->gT("all participants"),
                     ),
                     'options'=>array(
-                        'started'=>gT("participants who did not started survey."),
-                        'notstarted'=>gT("participants who started survey."),
+                        'started'=>$this->translate->gT("participants who did not started survey."),
+                        'notstarted'=>$this->translate->gT("participants who started survey."),
                     ),
-                    'label'=>"Send reminders to ",
+                    'label'=>$this->translate->gT("Send reminders to "),
                     'current'=>$this->get('reminderOnlyTo', 'Survey', $iSurveyId,''),
                 );
             }
