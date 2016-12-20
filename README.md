@@ -3,8 +3,8 @@ Allow to send token email (invite or reminder) via PHP cli . This allow to use c
 
 ## Installation
 
-- This plugin is only tested with LimeSurvey 2.06. Tested on some 2.50 build (always use latest build if possible)
-- In some LimeSurvey version : you need to manually create the `./application/runtime` to use CFileLogRoute (LimeSurvey issue).
+- This plugin is only tested with LimeSurvey 2.06. Tested on 2.50 build (always use latest build if possible)
+- In some LimeSurvey version : you need to manually create the `./application/runtime` to use CFileLogRoute ([See LimeSurvey manual](https://manual.limesurvey.org/Cron)).
 
 ### Via GIT
 - Go to your LimeSurvey Directory (version up to 2.06, build 150729)
@@ -24,6 +24,7 @@ Allow to send token email (invite or reminder) via PHP cli . This allow to use c
   - Minimum delay between invitation and first reminder
   - Minimum delay between each reminders
   - Same and more in each surveys setting
+  - If plugin validate the email (this allow only one email by token)
 - To test the plugin you need to call it via PHP Cli `php yourlimesurveydir/application/commands/console.php plugin cron --interval=1` (remind: it send email in this way)
 - This line can be added in your crontab or Task Scheduler
 

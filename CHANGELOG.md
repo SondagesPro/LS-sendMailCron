@@ -6,10 +6,11 @@ Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSur
 
 ### Feature
 
-- Allow disable in command
+- Control day of week when sending email by survey
+- Allow to disable email validate before try to send
 - Batch size by surveys
 - Different batch size for reminder and invitation by surveys
-- Allow debug and simulate system in command
+- Allow debug, simulate and disable in command
 
 ### Fix
 
