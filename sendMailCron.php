@@ -321,6 +321,14 @@ class sendMailCron extends PluginBase
                 $iSurvey=$oSurvey->sid;
                 if(tableExists("{{tokens_{$iSurvey}}}"))
                 {
+                    $maxEmail=$this->getSetting('maxEmail','survey',$iSurvey,"");
+                    if($maxEmail===""){
+                        $maxEmail=$this->getSetting('maxEmail',null,null,$this->settings['maxEmail']['default']);
+                    }
+                    if($maxEmail < 1){
+                        $this->sendMailCronLog("sendMailByCron for {$iSurvey} deactivated",2);
+                        break;
+                    }
                     $this->sendMailCronLog("sendMailByCron for {$iSurvey}",1);
                     if($maxBatchSize && $maxBatchSize<=$this->currentBatchSize){
                         $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} due to batch size",1);
@@ -338,6 +346,10 @@ class sendMailCron extends PluginBase
                     // Fill some information for this
                     $this->currentSurveyBatchSize=0;
                     $this->sendEmails($iSurvey,'invite');
+                    if($maxEmail < 2){
+                        $this->sendMailCronLog("sendMailByCron reminder for {$iSurvey} deactivated",2);
+                        break;
+                    }
                     if(!$maxBatchSize || $maxBatchSize>=$this->currentBatchSize){
                         if(!$this->getSetting('maxSurveyBatchSize','Survey', $iSurvey) || $this->getSetting('maxSurveyBatchSize','Survey', $iSurvey)>=$this->currentBatchSize){
                             $this->sendEmails($iSurvey,'remind');
