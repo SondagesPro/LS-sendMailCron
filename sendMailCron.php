@@ -154,12 +154,27 @@ class sendMailCron extends PluginBase
     {
         Yii::setPathOfAlias('sendMailCron', dirname(__FILE__));
         Yii::import("sendMailCron.sendMailCronTranslate");
+        $assetsUrl=Yii::app()->assetManager->publish(dirname(__FILE__) . '/assets');
+        Yii::app()->getClientScript()->registerCssFile($assetsUrl.'/admin.css');
         $this->translate = new sendMailCronTranslate;
         $event = $this->event;
         // Must control if token table exist
         $iSurveyId=$event->get('survey');
         if(tableExists("{{tokens_{$iSurveyId}}}"))
         {
+            /* get the default settings */
+            $defaultMaxEmail=$this->get('maxEmail', null,null,$this->settings['maxEmail']['default']);
+            if(!$defaultMaxEmail){
+                $defaultMaxEmail=$this->translate->gT("disabled");
+            }
+            $defaultDelayInvitation=$this->get('delayInvitation', null,null,$this->settings['delayInvitation']['default']);
+            $defaultDelayReminder=$this->get('delayReminder', null,null,$this->settings['delayReminder']['default']);
+            $maxBatchSize=$this->get('maxBatchSize', null,null,$this->settings['maxBatchSize']['default']);
+            if(!$maxBatchSize){
+                $maxBatchHelp=$this->translate->gT("Leave empty to send all available emails.");
+            }else{
+                $maxBatchHelp=sprintf($this->translate->gT("Leave empty to send all available emails,only limited by global batch size (%s) for all surveys."),$maxBatchSize);
+            }
             $oSurvey=Survey::model()->findByPk($iSurveyId);
             $aSettings=array(
                 'maxEmail' => array(
@@ -167,8 +182,8 @@ class sendMailCron extends PluginBase
                     'htmlOptions'=>array(
                         'min'=>0,
                     ),
-                    'label'=>$this->translate->gT("Max email to send (invitation + remind) to each particpant."),
-                    'help'=>$this->translate->gT("0 to deactivate sending of email, empty to use default"),
+                    'label'=>$this->translate->gT("Max email to send (invitation + remind) to each participant."),
+                    'help'=>sprintf($this->translate->gT("0 to deactivate sending of email, empty to use default (%s)"),$defaultMaxEmail),
                     'current'=>$this->get('maxEmail', 'Survey', $iSurveyId,""),
                 ),
                 'delayInvitation' => array(
@@ -177,7 +192,7 @@ class sendMailCron extends PluginBase
                         'min'=>1,
                     ),
                     'label'=>$this->translate->gT("Min delay between invitation and first reminder."),
-                    'help'=>$this->translate->gT("Empty for default"),
+                    'help'=>sprintf($this->translate->gT("In days, empty for default (%s)"),$defaultDelayInvitation),
                     'current'=>$this->get('delayInvitation', 'Survey', $iSurveyId,""),
                 ),
                 'delayReminder' => array(
@@ -186,7 +201,7 @@ class sendMailCron extends PluginBase
                         'min'=>1,
                     ),
                     'label'=>$this->translate->gT("Min delay between reminders."),
-                    'help'=>$this->translate->gT("Empty for default"),
+                    'help'=>sprintf($this->translate->gT("In days, empty for default (%s)"),$defaultDelayReminder),
                     'current'=>$this->get('delayReminder', 'Survey', $iSurveyId,""),
                 ),
                 'maxSurveyBatchSize'=>array(
@@ -195,7 +210,7 @@ class sendMailCron extends PluginBase
                         'min'=>1,
                     ),
                     'label'=>$this->translate->gT("Max email to send (invitation + remind) in one batch for this survey."),
-                    'help'=>$this->translate->gT("Leave empty to use only global batch size. In any condition, global batch size is take in account"),
+                    'help'=>$maxBatchHelp,
                     'current'=>$this->get('maxSurveyBatchSize', 'Survey', $iSurveyId,""),
                 ),
                 'maxSurveyBatchSize_invite'=>array(
@@ -204,7 +219,7 @@ class sendMailCron extends PluginBase
                         'min'=>1,
                     ),
                     'label'=>$this->translate->gT("Max email to send for invitation in one batch for this survey."),
-                    'help'=>"The max email setting is always taken into account",
+                    'help'=>$this->translate->gT("The max email setting can not be exceeded."),
                     'current'=>$this->get('maxSurveyBatchSize_invite', 'Survey', $iSurveyId,""),
                 ),
                 'maxSurveyBatchSize_remind'=>array(
@@ -213,19 +228,22 @@ class sendMailCron extends PluginBase
                         'min'=>1,
                     ),
                     'label'=>$this->translate->gT("Max email to send for reminder in one batch for this survey."),
-                    'help'=>"The max email setting is always taken into account, reminders are sent after all new invitation",
+                    'help'=>$this->translate->gT("The max email setting can not be exceeded. Reminders are sent after invitation, using the remainder of sends available."),
                     'current'=>$this->get('maxSurveyBatchSize_remind', 'Survey', $iSurveyId,""),
                 ),
                 'dayOfWeekToSend'=>array(
-
                     'type'=>'select',
                     'htmlOptions'=>array(
                         'multiple'=>'multiple',
-                        'empty'=>'',
+                        'empty'=>$this->translate->gT("All week days"),
                     ),
                     'selectOptions'=>array(
                         'placeholder' =>$this->translate->gT("All week days"),
                         'allowClear'=> true,
+                        'width'=>'100%',
+                    ),
+                    'controlOptions'=>array(
+                        'class'=>'search-100',
                     ),
                     'label'=>$this->translate->gT("Day of week for sending email"),
                     'options'=>array(
@@ -303,6 +321,7 @@ class sendMailCron extends PluginBase
                 $iSurvey=$oSurvey->sid;
                 if(tableExists("{{tokens_{$iSurvey}}}"))
                 {
+                    $this->sendMailCronLog("sendMailByCron for {$iSurvey}",1);
                     if($maxBatchSize && $maxBatchSize<=$this->currentBatchSize){
                         $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} due to batch size",1);
                         break;
@@ -315,7 +334,6 @@ class sendMailCron extends PluginBase
                         $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} for today",1);
                         break;
                     }
-                    $this->sendMailCronLog("sendMailByCron for {$iSurvey}",1);
                     Yii::app()->setConfig('surveyID',$iSurvey);
                     // Fill some information for this
                     $this->currentSurveyBatchSize=0;
