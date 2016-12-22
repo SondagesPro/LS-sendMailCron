@@ -27,7 +27,7 @@ class sendMailCronTranslate
         'fr'=>array(
             "disabled"=>"désactivé",
             "no limit"=>"non limité",
-            "Max email to send (invitation + remind) to each particpant."=>"Nombre de messages maximum à envoyer à chaque participant.",
+            "Max email to send (invitation + remind) to each participant."=>"Nombre de messages maximum à envoyer à chaque participant.",
             "0 to deactivate sending of email, empty to use default (%s)"=>"0 pour désactiver l'envoi automatique de message, vide pour la valeur par défaut (%s)",
             "Min delay between invitation and first reminder."=>"Délai minimum entre l'invitation et la première relance",
             "Min delay between reminders."=>"Délai minimum entre les relances",
