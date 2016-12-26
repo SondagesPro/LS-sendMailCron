@@ -327,12 +327,12 @@ class sendMailCron extends PluginBase
                     }
                     if($maxEmail < 1){
                         $this->sendMailCronLog("sendMailByCron for {$iSurvey} deactivated",2);
-                        break;
+                        continue;
                     }
                     $this->sendMailCronLog("sendMailByCron for {$iSurvey}",1);
                     if($maxBatchSize && $maxBatchSize<=$this->currentBatchSize){
                         $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} due to batch size",1);
-                        break;
+                        continue;
                     }
                     $dayOfWeekToSend=$this->getSetting('dayOfWeekToSend','Survey', $iSurvey,"[]");
 
@@ -340,7 +340,7 @@ class sendMailCron extends PluginBase
                     $todayNum=(string)self::dateShifted(date("Y-m-d H:i:s"),"N");
                     if(!empty($aDayOfWeekToSend) && !in_array($todayNum,$aDayOfWeekToSend)){
                         $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} for today",1);
-                        break;
+                        continue;
                     }
                     Yii::app()->setConfig('surveyID',$iSurvey);
                     // Fill some information for this
@@ -348,7 +348,7 @@ class sendMailCron extends PluginBase
                     $this->sendEmails($iSurvey,'invite');
                     if($maxEmail < 2){
                         $this->sendMailCronLog("sendMailByCron reminder for {$iSurvey} deactivated",2);
-                        break;
+                        continue;
                     }
                     if(!$maxBatchSize || $maxBatchSize>=$this->currentBatchSize){
                         if(!$this->getSetting('maxSurveyBatchSize','Survey', $iSurvey) || $this->getSetting('maxSurveyBatchSize','Survey', $iSurvey)>=$this->currentBatchSize){
