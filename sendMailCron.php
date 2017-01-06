@@ -533,7 +533,7 @@ class sendMailCron extends PluginBase
         foreach ($oTokens as $iToken)
         {
             /* Test actual sended */
-            if($this->stopSendMailAction($aCountMail,$sType,$iSurvey)){
+            if($this->stopSendMailAction($aCountMail,$iSurvey,$sType)){
                 return;
             }
             $oToken=TokenDynamic::model($iSurvey)->findByPk($iToken->tid);
