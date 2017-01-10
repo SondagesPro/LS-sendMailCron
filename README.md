@@ -25,6 +25,7 @@ Allow to send token email (invite or reminder) via PHP cli . This allow to use c
   - Minimum delay between each reminders
   - Same and more in each surveys setting
   - If plugin validate the email (this allow only one email by token)
+  - The cron type list to be allowed in survey settings
 - To test the plugin you need to call it via PHP Cli `php yourlimesurveydir/application/commands/console.php plugin cron --interval=1` (remind: it send email in this way)
 - This line can be added in your crontab or Task Scheduler
 
@@ -35,6 +36,7 @@ The plugin accept optionnal parameters in the command line
 - **debug** level from 0 : nothing is shown except errors to 3 all action are shown sendMailCronDebug=3 (integer, default 1)
 - **simulate** action done by the plugin : don't send any email or update token : sendMailCronSimulate=1 (boolean, default false)
 - **disable** all action done by the plugin in command line : sendMailCronDisable=1 (boolean, default false)
+- **cronType** of actual task : sendMailCronType=test (string|null, default null)
 
 Some example
 
@@ -70,9 +72,9 @@ Plugin use 2 system for logging :
 
 ## Home page & Copyright
 - HomePage <http://extensions.sondages.pro/sendmailcron/>
-- Copyright © 2016 Denis Chenu <http://sondages.pro>
+- Copyright © 2016-2017 Denis Chenu <http://sondages.pro>
 - Copyright © 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com>
-- Copyright © 2016 Extract Recherche Marketing <http://www.extractmarketing.com>
+- Copyright © 2016-2017 Extract Recherche Marketing <http://www.extractmarketing.com>
 - Licence : GNU Affero General Public License <https://www.gnu.org/licenses/gpl-3.0.html>
 
 ## Support

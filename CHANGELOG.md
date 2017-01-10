@@ -12,6 +12,7 @@ Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSur
 - Batch size by surveys
 - Different batch size for reminder and invitation by surveys
 - Allow debug, simulate and disable in command
+- Adding cron/task type for specific send
 
 ### Fix
 

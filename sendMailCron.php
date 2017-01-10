@@ -38,6 +38,10 @@ class sendMailCron extends PluginBase
      * @var boolean disable plugin (via command line)
      */
     private $disable=false;
+    /**
+     * @var string actual cron type
+     */
+    private $cronType;
 
     /**
      * @var int currentBatchSize Count for this batch
@@ -112,6 +116,22 @@ class sendMailCron extends PluginBase
             'label'=>"Validate email before try to send it.",
             'default'=>0,
         ),
+        'cronTypes' => array(
+            'type'=>'text',
+            'label'=>"Cron/task type.",
+            'help'=>"One type by line, use only alphanumeric caracter, you can use <code>,</code> or <code>;</code> as separator.",
+            'default'=>'',
+        ),
+        'cronTypeNone' => array(
+            'type'=>'checkbox',
+            'value'=>1,
+            'htmlOption'=>array(
+                'uncheckValue'=>0
+            ),
+            'label'=>"Survey without cron type use empty cron type only.",
+            'help'=>"If a survey don't have type: you can choose if it sended for each cron or only if no type is set",
+            'default'=>1,
+        ),
     );
     /**
     * Add function to be used in cron event
@@ -125,6 +145,21 @@ class sendMailCron extends PluginBase
         $this->subscribe('newSurveySettings');
     }
 
+    public function saveSettings($settings)
+    {
+        if(isset($settings['cronTypes']))
+        {
+            $cronTypes = preg_split('/\r\n|\r|\n|,|;/', $settings['cronTypes']);
+            $cronTypes = array_map(
+                    function($cronType) { return preg_replace("/[^0-9a-zA-Z]/i", '', $cronType); },
+                    $cronTypes
+            );
+            $cronTypes = array_filter($cronTypes);
+            $settings['cronTypes']=implode( "|",$cronTypes);
+        }
+
+        parent::saveSettings($settings);
+    }
     /**
     * set actual url when activate
     */
@@ -258,6 +293,34 @@ class sendMailCron extends PluginBase
                     'current'=>$this->get('dayOfWeekToSend', 'Survey', $iSurveyId,array()),
                 ),
             );
+            if($this->get('cronTypes', null, null)){
+                $availCronTypes=$this->get('cronTypes',null,null,$this->settings['cronTypes']['default']);
+                $availCronTypes=explode('|', $availCronTypes);
+                $cronTypesOtions=array();
+                foreach($availCronTypes as $cronType){
+                    $cronTypesOtions[$cronType]=$cronType;
+                }
+                $emptyLabel=$this->get('cronTypeNone',null,null,$this->settings['cronTypeNone']['default']) ? $this->translate->gT("Only for no cron type") : $this->translate->gT("For all cron type");
+                $aSettings['cronTypes']=array(
+                    'type'=>'select',
+                    'htmlOptions'=>array(
+                        'multiple'=>'multiple',
+                        'empty'=>$emptyLabel,
+                    ),
+                    'selectOptions'=>array(
+                        'placeholder' =>$emptyLabel,
+                        'allowClear'=> true,
+                        'width'=>'100%',
+                    ),
+                    'controlOptions'=>array(
+                        'class'=>'search-100',
+                    ),
+                    'label'=>$this->translate->gT("Type of emailing"),
+                    'options'=>$cronTypesOtions,
+                    'current'=>$this->get('cronTypes', 'Survey', $iSurveyId,array()),
+                );
+            }
+
             if($oSurvey->anonymized!="Y"){
                 $aSettings['reminderOnlyTo']=array(
                     'type'=>'select',
@@ -272,6 +335,7 @@ class sendMailCron extends PluginBase
                     'current'=>$this->get('reminderOnlyTo', 'Survey', $iSurveyId,''),
                 );
             }
+
             $event->set("surveysettings.{$this->id}", array(
               'name' => get_class($this),
               'settings' => $aSettings
@@ -321,6 +385,7 @@ class sendMailCron extends PluginBase
                 $iSurvey=$oSurvey->sid;
                 if(tableExists("{{tokens_{$iSurvey}}}"))
                 {
+                    /* By maxEmail */
                     $maxEmail=$this->getSetting('maxEmail','survey',$iSurvey,"");
                     if($maxEmail===""){
                         $maxEmail=$this->getSetting('maxEmail',null,null,$this->settings['maxEmail']['default']);
@@ -329,19 +394,49 @@ class sendMailCron extends PluginBase
                         $this->sendMailCronLog("sendMailByCron for {$iSurvey} deactivated",2);
                         continue;
                     }
-                    $this->sendMailCronLog("sendMailByCron for {$iSurvey}",1);
-                    if($maxBatchSize && $maxBatchSize<=$this->currentBatchSize){
-                        $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} due to batch size",1);
-                        continue;
-                    }
+                    /* By day of week */
                     $dayOfWeekToSend=$this->getSetting('dayOfWeekToSend','Survey', $iSurvey,"[]");
-
                     $aDayOfWeekToSend=array_filter(json_decode($dayOfWeekToSend));
                     $todayNum=(string)self::dateShifted(date("Y-m-d H:i:s"),"N");
                     if(!empty($aDayOfWeekToSend) && !in_array($todayNum,$aDayOfWeekToSend)){
                         $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} for today",1);
                         continue;
                     }
+                    /* By cron type */
+                    $availCronTypes=$this->getSetting('cronTypes',null,null,"");
+                    $availCronTypes=explode('|', $availCronTypes);
+                    if(!empty($availCronTypes)){
+                        $surveyCronTypes=$this->getSetting('cronTypes','Survey',$iSurvey,"");
+                        if($surveyCronTypes){
+                            $surveyCronTypes=json_decode($surveyCronTypes);
+                        } else {
+                            $surveyCronTypes=array();
+                            if(!$this->getSetting('cronTypeNone',null,null,$this->settings['cronTypeNone']['default']) && $this->cronType){
+                                $surveyCronTypes=array($this->cronType);
+                            } else {
+                                $surveyCronTypes=array();
+                            }
+                        }
+                        $surveyCronTypes=array_intersect($surveyCronTypes,$availCronTypes);
+                        if($this->cronType){
+                            if(!in_array($this->cronType,$surveyCronTypes)){
+                                $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} for this cron type ({$this->cronType})",1);
+                                continue;
+                            }
+                        } else {
+                            if(!empty($surveyCronTypes)){
+                                $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} for no cron type",1);
+                                continue;
+                            }
+                        }
+
+                    }
+                    $this->sendMailCronLog("sendMailByCron for {$iSurvey}",1);
+                    if($maxBatchSize && $maxBatchSize<=$this->currentBatchSize){
+                        $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} due to batch size",1);
+                        continue;
+                    }
+
                     Yii::app()->setConfig('surveyID',$iSurvey);
                     // Fill some information for this
                     $this->currentSurveyBatchSize=0;
@@ -741,7 +836,7 @@ class sendMailCron extends PluginBase
         }
         if($oSetting && !is_null($oSetting->value))
         {
-            return trim(stripslashes($oSetting->value),'"');
+            return trim($oSetting->value,'"');
         }
         else
             return $default;
@@ -755,7 +850,13 @@ class sendMailCron extends PluginBase
             $this->settings['baseUrl']['default']= Yii::app()->request->getBaseUrl();
             $this->settings['scriptUrl']['default']= Yii::app()->request->getScriptUrl();
         }
-        return parent::getPluginSettings($getValues);
+        $pluginSettings= parent::getPluginSettings($getValues);
+        if($getValues){
+            if($pluginSettings['cronTypes']){
+                $pluginSettings['cronTypes']['current']=implode("\n",explode("|",$pluginSettings['cronTypes']['current']));
+            }
+        }
+        return $pluginSettings;
     }
 
     /**
@@ -775,6 +876,19 @@ class sendMailCron extends PluginBase
             }
             if(substr($arg, 0, strlen("sendMailCronDisable="))=="sendMailCronDisable="){
                 $this->disable=boolval(substr($arg,strlen("sendMailCronDisable=")));
+            }
+
+            if(substr($arg, 0, strlen("sendMailCronType="))=="sendMailCronType="){
+                $cronType=trim(substr($arg,strlen("sendMailCronType=")));
+                $availCronTypes=$this->getSetting('cronTypes',null,null,"");
+                $availCronTypes=explode('|', $availCronTypes);
+                if($cronType && !in_array($cronType,$availCronTypes)){
+                    $this->sendMailCronLog("invalid cronType : $cronType, plugin is disable",0);
+                    $this->disable=true;
+                } else {
+                    $this->cronType=$cronType;
+                }
+                //$this->disable=boolval(substr($arg,strlen("sendMailCronDisable=")));
             }
         }
     }
@@ -798,6 +912,7 @@ class sendMailCron extends PluginBase
             $this->sendMailCronFinalLog($aCountMail);
             return true;
         }
+
         if($this->getSetting('maxSurveyBatchSize','Survey', $iSurvey) && $this->getSetting('maxSurveyBatchSize','Survey', $iSurvey) <= $this->currentSurveyBatchSize){
             $stillToSend=$aCountMail['total']*2-array_sum($aCountMail);
             $this->sendMailCronLog("Batch survey size achieved for {$iSurvey} during {$sType}. {$stillToSend} email to send at next batch.",1);
