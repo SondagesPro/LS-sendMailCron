@@ -251,7 +251,7 @@ class sendMailCron extends PluginBase
                 'maxSurveyBatchSize_invite'=>array(
                     'type'=>'int',
                     'htmlOptions'=>array(
-                        'min'=>1,
+                        'min'=>0,
                     ),
                     'label'=>$this->translate->gT("Max email to send for invitation in one batch for this survey."),
                     'help'=>$this->translate->gT("The max email setting can not be exceeded."),
@@ -260,7 +260,7 @@ class sendMailCron extends PluginBase
                 'maxSurveyBatchSize_remind'=>array(
                     'type'=>'int',
                     'htmlOptions'=>array(
-                        'min'=>1,
+                        'min'=>0,
                     ),
                     'label'=>$this->translate->gT("Max email to send for reminder in one batch for this survey."),
                     'help'=>$this->translate->gT("The max email setting can not be exceeded. Reminders are sent after invitation, using the remainder of sends available."),
@@ -913,7 +913,7 @@ class sendMailCron extends PluginBase
     private function stopSendMailAction($aCountMail,$iSurvey,$sType)
     {
         $maxThisType=$this->getSetting('maxSurveyBatchSize_'.$sType,'survey',$iSurvey,"");
-        if( $maxThisType && $aCountMail['sent'] >= $maxThisType){
+        if( $maxThisType!=='' && $aCountMail['sent'] >= $maxThisType){
             $stillToSend=$aCountMail['total']*2-array_sum($aCountMail);
             $this->sendMailCronLog("Survey {$iSurvey}, {$sType} survey batch size achieved. {$stillToSend} email to send at next batch.",1);
             return true;
