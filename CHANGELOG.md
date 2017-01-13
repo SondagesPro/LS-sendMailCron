@@ -12,7 +12,7 @@ Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSur
 - Batch size by surveys
 - Different batch size for reminder and invitation by surveys
 - Allow debug, simulate and disable in command
-- Adding cron/task type for specific send
+- Adding cron/task type for specific send (moment)
 
 ### Fix
 
@@ -20,6 +20,7 @@ Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSur
 - LimeSurvey 3.0 compatibility quick fix
 - Add beforeTokenEmail event when send an email
 - Better ordering for reminder
+- Fix 1st reminder send with the good day delay
 
 ## [0.2.0] - 2016-12-14
 
