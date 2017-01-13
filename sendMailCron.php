@@ -118,8 +118,8 @@ class sendMailCron extends PluginBase
         ),
         'cronTypes' => array(
             'type'=>'text',
-            'label'=>"Cron/task type.",
-            'help'=>"One type by line, use only alphanumeric caracter, you can use <code>,</code> or <code>;</code> as separator.",
+            'label'=>"Cron moment type.",
+            'help'=>"One moment by line, use only alphanumeric caracter, you can use <code>,</code> or <code>;</code> as separator.",
             'default'=>'',
         ),
         'cronTypeNone' => array(
@@ -128,8 +128,8 @@ class sendMailCron extends PluginBase
             'htmlOption'=>array(
                 'uncheckValue'=>0
             ),
-            'label'=>"Survey without cron type use empty cron type only.",
-            'help'=>"If a survey don't have type: you can choose if it sended for each cron or only if no type is set",
+            'label'=>"Survey without moment use empty moment or moment not set only.",
+            'help'=>"If a survey don't have type: you can choose if it sended for each cron or only if no moment is set",
             'default'=>1,
         ),
     );
@@ -300,7 +300,7 @@ class sendMailCron extends PluginBase
                 foreach($availCronTypes as $cronType){
                     $cronTypesOtions[$cronType]=$cronType;
                 }
-                $emptyLabel=$this->get('cronTypeNone',null,null,$this->settings['cronTypeNone']['default']) ? $this->translate->gT("Only for no cron type") : $this->translate->gT("For all cron type");
+                $emptyLabel=$this->get('cronTypeNone',null,null,$this->settings['cronTypeNone']['default']) ? $this->translate->gT("Only if no moment is set") : $this->translate->gT("At all moment");
                 $aSettings['cronTypes']=array(
                     'type'=>'select',
                     'htmlOptions'=>array(
@@ -315,7 +315,7 @@ class sendMailCron extends PluginBase
                     'controlOptions'=>array(
                         'class'=>'search-100',
                     ),
-                    'label'=>$this->translate->gT("Type of emailing"),
+                    'label'=>$this->translate->gT("Moment for emailing"),
                     'options'=>$cronTypesOtions,
                     'current'=>$this->get('cronTypes', 'Survey', $iSurveyId,array()),
                 );
@@ -888,7 +888,6 @@ class sendMailCron extends PluginBase
                 } else {
                     $this->cronType=$cronType;
                 }
-                //$this->disable=boolval(substr($arg,strlen("sendMailCronDisable=")));
             }
         }
     }

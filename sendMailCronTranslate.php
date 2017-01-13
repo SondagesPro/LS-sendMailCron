@@ -52,6 +52,9 @@ class sendMailCronTranslate
             "all participants"=>"Tous les participants",
             "participants who did not started survey."=>"aux participants qui n'ont pas démarré le questionaire",
             "participants who started survey."=>"aux participants qui ont démarré le questionnaire",
+            "Only if no moment is set"=>"Seulement si il n'y a pas de moment d'indiqué",
+            "At all moment"=>"Pour tous les moments",
+            "Moment for emailing"=>"Moment pour l'envoi des messages",
         ),
     );
     /**
