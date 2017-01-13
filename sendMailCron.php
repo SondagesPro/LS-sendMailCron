@@ -592,6 +592,7 @@ class sendMailCron extends PluginBase
         if($sType=='remind')
         {
             $dAfterSent=date("Y-m-d H:i",strtotime("-".intval($dayDelayReminder)." days",$dtToday));// sent is X day before and up
+            $dAfterSentInvitation=date("Y-m-d H:i",strtotime("-".intval($delayInvitation)." days",$dtToday));// sent is X day before and up
         }
         $dTomorrow=dateShift(date("Y-m-d H:i", time() + 86400 ), "Y-m-d H:i", Yii::app()->getConfig("timeadjust"));// Tomorrow for validuntil
         $this->sendMailCronLog("Survey {$iSurvey}, {$sType} Valid from {$dFrom} And Valid until {$dTomorrow} (or NULL)",3);
@@ -599,14 +600,18 @@ class sendMailCron extends PluginBase
         $oCriteria->select = "tid";
         $oCriteria->addCondition("emailstatus = 'OK'");
         $oCriteria->addCondition("token != ''");
-        if($sType=='invite')
+        if($sType=='invite'){
             $oCriteria->addCondition("(sent = 'N' OR sent = '' OR sent IS NULL)");
-        if($sType=='remind')
+        }
+        if($sType=='remind'){
             $oCriteria->addCondition("(sent != 'N' AND sent != '' AND sent IS NOT NULL)");
-        if($sType=='remind')
-            $oCriteria->addCondition("(sent < :sent)");
-        if($sType=='remind')
-            $oCriteria->addCondition("remindercount < :remindercount  OR remindercount = '' OR remindercount IS NULL");// No other reminder
+        }
+        if($sType=='remind'){
+            $oCriteria->addCondition("((sent < :sent) AND (remindercount = '' OR remindercount IS NULL OR remindercount > 0)) OR ((sent < :sentinvite) AND (remindercount = '' OR remindercount IS NULL OR remindercount < 1))");
+        }
+        if($sType=='remind'){
+            $oCriteria->addCondition("remindercount < :remindercount  OR remindercount = '' OR remindercount IS NULL");
+        }
         if($sType=='remind'){ /* add order criteria */
             $oCriteria->order="remindercount desc,sent asc";
         }
@@ -615,10 +620,19 @@ class sendMailCron extends PluginBase
         $oCriteria->addCondition("(validfrom < :validfrom OR validfrom IS NULL)");
         $oCriteria->addCondition("(validuntil > :validuntil OR validuntil IS NULL)");
         if($sType=='invite'){
-            $oCriteria->params = array(':validfrom'=>$dFrom,':validuntil'=>$dTomorrow);
+            $oCriteria->params = array(
+                ':validfrom'=>$dFrom,
+                ':validuntil'=>$dTomorrow
+            );
         }
         if($sType=='remind'){
-            $oCriteria->params = array(':validfrom'=>$dFrom,':validuntil'=>$dTomorrow,':sent'=>strval($dAfterSent),':remindercount'=>$maxReminder);
+            $oCriteria->params = array(
+                ':validfrom'=>$dFrom,
+                ':validuntil'=>$dTomorrow,
+                ':sent'=>strval($dAfterSent),
+                ':sentinvite'=>strval($dAfterSentInvitation),
+                ':remindercount'=>$maxReminder
+            );
         }
         # Send invite
         // Find all token
