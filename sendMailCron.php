@@ -354,7 +354,7 @@ class sendMailCron extends PluginBase
 
     public function sendMailByCron()
     {
-        $this->setConfigs();
+        $this->_setConfigs();
         $this->setArgs();
         if($this->disable){
             return;
@@ -364,8 +364,8 @@ class sendMailCron extends PluginBase
         $oSurveys=Survey::model()->findAll(
             "active = 'Y' AND (startdate <= :now1 OR startdate IS NULL) AND (expires >= :now2 OR expires IS NULL)",
                 array(
-                    ':now1' => self::dateShifted(date("Y-m-d H:i:s")),
-                    ':now2' => self::dateShifted(date("Y-m-d H:i:s"))
+                    ':now1' => self::_dateShifted(date("Y-m-d H:i:s")),
+                    ':now2' => self::_dateShifted(date("Y-m-d H:i:s"))
                 )
             );
         // Unsure we need whole ... to be fixed
@@ -397,7 +397,7 @@ class sendMailCron extends PluginBase
                     /* By day of week */
                     $dayOfWeekToSend=$this->getSetting('dayOfWeekToSend','Survey', $iSurvey,"[]");
                     $aDayOfWeekToSend=array_filter(json_decode($dayOfWeekToSend));
-                    $todayNum=(string)self::dateShifted(date("Y-m-d H:i:s"),"N");
+                    $todayNum=(string)self::_dateShifted(date("Y-m-d H:i:s"),"N");
                     if(!empty($aDayOfWeekToSend) && !in_array($todayNum,$aDayOfWeekToSend)){
                         $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} for today",1);
                         continue;
@@ -459,7 +459,7 @@ class sendMailCron extends PluginBase
         }
     }
 
-    private static function dateShifted($date, $dformat="Y-m-d H:i:s")
+    private static function _dateShifted($date, $dformat="Y-m-d H:i:s")
     {
         if(Yii::app()->getConfig("timeadjust",false)===false)
         {
@@ -473,7 +473,7 @@ class sendMailCron extends PluginBase
     }
 
     // We need a lot of config
-    private function setConfigs()
+    private function _setConfigs()
     {
         $aDefaultConfigs = require(Yii::app()->basePath. DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config-defaults.php');
         foreach($aDefaultConfigs as $sConfig=>$defaultConfig)
