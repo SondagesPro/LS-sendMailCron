@@ -20,7 +20,7 @@
  * GNU General Public License for more details.
  */
 
-class sendMailCron extends PluginBase
+class sendMailCron extends \ls\pluginmanager\PluginBase
 {
     protected $storage = 'DbStorage';
     static protected $description = 'Allow to send token email by cron or sheduled task';
