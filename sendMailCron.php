@@ -7,7 +7,7 @@
  * @copyright 2016-2017 Denis Chenu <https://www.sondages.pro>
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> for the 0.1.0 version
  * @license AGPL v3
- * @version 0.3.0
+ * @version 0.3.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -51,11 +51,6 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
      * @var int SurveyBatchSize Count for this batch of actual survey
      */
     private $currentSurveyBatchSize;
-
-    /**
-     * @var class \translate
-     */
-    private $translate;
 
     /**
      * @var array[] the settings
@@ -150,6 +145,9 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         /* The survey seeting */
         $this->subscribe('beforeSurveySettings');
         $this->subscribe('newSurveySettings');
+
+        /* Update Yii config */
+        $this->subscribe('afterPluginLoad');
     }
 
     /**
@@ -206,7 +204,6 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         Yii::import("sendMailCron.sendMailCronTranslate");
         $assetsUrl=Yii::app()->assetManager->publish(dirname(__FILE__) . '/assets');
         Yii::app()->getClientScript()->registerCssFile($assetsUrl.'/admin.css');
-        $this->translate = new sendMailCronTranslate;
         $event = $this->event;
         // Must control if token table exist
         $iSurveyId=$event->get('survey');
