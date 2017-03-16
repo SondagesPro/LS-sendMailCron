@@ -53,10 +53,13 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
     private $currentSurveyBatchSize;
 
     /**
-     * @var \translate class
+     * @var class \translate
      */
     private $translate;
 
+    /**
+     * @var array[] the settings
+     */
     protected $settings = array(
         'information' => array(
             'type' => 'info',
@@ -135,16 +138,24 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
     );
     /**
     * Add function to be used in cron event
+    * @see parent::init()
     */
     public function init()
     {
+        /* Action on cron */
         $this->subscribe('cron','sendMailByCron');
+        /* Needed gonfig */
         $this->subscribe('beforeActivate');
 
+        /* The survey seeting */
         $this->subscribe('beforeSurveySettings');
         $this->subscribe('newSurveySettings');
     }
 
+    /**
+    * set actual url when activate
+    * @see parent::saveSettings()
+    */
     public function saveSettings($settings)
     {
         if(isset($settings['cronTypes']))
@@ -162,6 +173,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
     }
     /**
     * set actual url when activate
+    * @see parent::beforeActivate()
     */
     public function beforeActivate()
     {
@@ -185,6 +197,9 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         }
     }
 
+    /**
+     * @see parent::beforeSurveySettings()
+     */
     public function beforeSurveySettings()
     {
         Yii::setPathOfAlias('sendMailCron', dirname(__FILE__));
@@ -343,6 +358,9 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         }
     }
 
+    /**
+     * @see parent::newSurveySettings()
+     */
     public function newSurveySettings()
     {
         $event = $this->event;
@@ -352,6 +370,10 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         }
     }
 
+    /**
+     * The action of sending cron when needed
+     * @return void
+     */
     public function sendMailByCron()
     {
         $this->_setConfigs();
@@ -459,6 +481,12 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         }
     }
 
+    /**
+     * Return the date fixed by config (SQL format)
+     * @param string $date in SQL format
+     * @param string $dformat in SQL format
+     * @return string
+     */
     private static function _dateShifted($date, $dformat="Y-m-d H:i:s")
     {
         if(Yii::app()->getConfig("timeadjust",false)===false)
@@ -472,7 +500,10 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         return date($dformat, strtotime(Yii::app()->getConfig("timeadjust"), strtotime($date)));
     }
 
-    // We need a lot of config
+    /**
+     * Set wholme LimeSurvey config (not needed in new LS version)
+     * @return void
+     */
     private function _setConfigs()
     {
         $aDefaultConfigs = require(Yii::app()->basePath. DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config-defaults.php');
@@ -512,6 +543,13 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             }
         }
     }
+
+    /**
+     * Send eamis for a survey and a type
+     * @param int $iSurvey
+     * @param string $sType
+     * @return void
+     */
     private function sendEmails($iSurvey,$sType='invite')
     {
         // For the log
@@ -799,12 +837,15 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
     }
 
     /**
-    * log
+    * log an event
+    * @param string $sLog
+    * @param int $state
+    * retrun @void
     */
-    private function sendMailCronLog($sLog,$bState=0){
+    private function sendMailCronLog($sLog,$state=0){
         // Play with DEBUG : ERROR/LOG/DEBUG
         $sNow=date(DATE_ATOM);
-        switch ($bState){
+        switch ($state){
             case 0:
                 $sLevel='error';
                 $sLogLog="[ERROR] $sLog";
@@ -823,16 +864,21 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                 break;
         }
         Yii::log($sLog, $sLevel,'application.plugins.sendMailCron');
-        if($bState <= $this->debug || $bState==0)
+        if($state <= $this->debug || $state==0)
         {
             echo "[{$sNow}] {$sLogLog}\n";
         }
     }
 
     /**
-    * LimeSurvey 2.06 have issue with getPluginSettings->getPluginSettings (autoloader is broken) with command
-    * Then use own function
-    */
+     * LimeSurvey 2.06 have issue with getPluginSettings->getPluginSettings (autoloader is broken) with command
+     * Then use own function
+     * @param string $sSetting
+     * @param string $sObject
+     * @param string $sObjectId
+     * @param string $default
+     * @return string
+     */
     private function getSetting($sSetting,$sObject=null,$sObjectId=null,$default=null)
     {
         if($sObject && $sObjectId){
@@ -855,7 +901,9 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         else
             return $default;
     }
-    // Set the default to actual url when show settngs
+    /**
+     * @see parent:getPluginSettings
+     */
     public function getPluginSettings($getValues=true)
     {
         if(!Yii::app() instanceof CConsoleApplication)
@@ -907,7 +955,11 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
     }
 
     /**
-     * Validate e send action
+     * Validate a send action : dis we muist stop action
+     * @param int[] $aCountMail array for email count
+     * @param int $iSurvey survey id
+     * @param string $sType
+     * @return boolean
      *
      */
     private function stopSendMailAction($aCountMail,$iSurvey,$sType)
@@ -932,10 +984,14 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             $this->sendMailCronFinalLog($aCountMail);
             return true;
         }
+
+        return false;
     }
 
     /**
      * Ending and return information according to sended after a send session
+     * @param int[] $aCountMail array for email count
+     * @return @void
      */
     private function sendMailCronFinalLog($aCountMail)
     {
@@ -959,4 +1015,31 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             }
         }
     }
+
+    /**
+     * get translation
+     * @param string
+     * @return string
+     */
+    private function _translate($string){
+        return Yii::t('',$string,array(),get_class($this));
+    }
+    /**
+     * Add this translation just after loaded all plugins
+     * @see event afterPluginLoad
+     */
+    public function afterPluginLoad(){
+        // messageSource for this plugin:
+        $messageSource=array(
+            'class' => 'CGettextMessageSource',
+            'cacheID' => get_class($this).'Lang',
+            'cachingDuration'=>3600,
+            'forceTranslation' => true,
+            'useMoFile' => true,
+            'basePath' => __DIR__ . DIRECTORY_SEPARATOR.'locale',
+            'catalog'=>'messages',// default from Yii
+        );
+        Yii::app()->setComponent(get_class($this),$messageSource);
+    }
+
 }
