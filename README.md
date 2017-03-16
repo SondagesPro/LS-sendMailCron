@@ -68,6 +68,11 @@ Plugin use 2 system for logging :
       ),
   ````
 
+## Contribute
+
+Issue and merge request are welcome on [framagit](https://framagit.org/SondagePro-LimeSurvey-plugin/sendMailCron) or [github](https://github.com/SondagesPro/LS-sendMailCron/).
+
+Translation can be done via [Glotpress of Sondages Pro plugin](http://translate.sondages.pro/projects/sendmailcron)
 
 
 ## Home page & Copyright

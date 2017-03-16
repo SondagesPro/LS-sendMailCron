@@ -7,7 +7,7 @@
  * @copyright 2016-2017 Denis Chenu <https://www.sondages.pro>
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> for the 0.1.0 version
  * @license AGPL v3
- * @version 0.2.1
+ * @version 0.3.0
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -215,15 +215,15 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             /* get the default settings */
             $defaultMaxEmail=$this->get('maxEmail', null,null,$this->settings['maxEmail']['default']);
             if(!$defaultMaxEmail){
-                $defaultMaxEmail=$this->translate->gT("disabled");
+                $defaultMaxEmail=$this->_translate("disabled");
             }
             $defaultDelayInvitation=$this->get('delayInvitation', null,null,$this->settings['delayInvitation']['default']);
             $defaultDelayReminder=$this->get('delayReminder', null,null,$this->settings['delayReminder']['default']);
             $maxBatchSize=$this->get('maxBatchSize', null,null,$this->settings['maxBatchSize']['default']);
             if(!$maxBatchSize){
-                $maxBatchHelp=$this->translate->gT("Leave empty to send all available emails.");
+                $maxBatchHelp=$this->_translate("Leave empty to send all available emails.");
             }else{
-                $maxBatchHelp=sprintf($this->translate->gT("Leave empty to send all available emails,only limited by global batch size (%s) for all surveys."),$maxBatchSize);
+                $maxBatchHelp=sprintf($this->_translate("Leave empty to send all available emails,only limited by global batch size (%s) for all surveys."),$maxBatchSize);
             }
             $oSurvey=Survey::model()->findByPk($iSurveyId);
             $aSettings=array(
@@ -232,8 +232,8 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                     'htmlOptions'=>array(
                         'min'=>0,
                     ),
-                    'label'=>$this->translate->gT("Max email to send (invitation + remind) to each participant."),
-                    'help'=>sprintf($this->translate->gT("0 to deactivate sending of email, empty to use default (%s)"),$defaultMaxEmail),
+                    'label'=>$this->_translate("Max email to send (invitation + remind) to each participant."),
+                    'help'=>sprintf($this->_translate("0 to deactivate sending of email, empty to use default (%s)"),$defaultMaxEmail),
                     'current'=>$this->get('maxEmail', 'Survey', $iSurveyId,""),
                 ),
                 'delayInvitation' => array(
@@ -241,8 +241,8 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                     'htmlOptions'=>array(
                         'min'=>1,
                     ),
-                    'label'=>$this->translate->gT("Min delay between invitation and first reminder."),
-                    'help'=>sprintf($this->translate->gT("In days, empty for default (%s)"),$defaultDelayInvitation),
+                    'label'=>$this->_translate("Min delay between invitation and first reminder."),
+                    'help'=>sprintf($this->_translate("In days, empty for default (%s)"),$defaultDelayInvitation),
                     'current'=>$this->get('delayInvitation', 'Survey', $iSurveyId,""),
                 ),
                 'delayReminder' => array(
@@ -250,8 +250,8 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                     'htmlOptions'=>array(
                         'min'=>1,
                     ),
-                    'label'=>$this->translate->gT("Min delay between reminders."),
-                    'help'=>sprintf($this->translate->gT("In days, empty for default (%s)"),$defaultDelayReminder),
+                    'label'=>$this->_translate("Min delay between reminders."),
+                    'help'=>sprintf($this->_translate("In days, empty for default (%s)"),$defaultDelayReminder),
                     'current'=>$this->get('delayReminder', 'Survey', $iSurveyId,""),
                 ),
                 'maxSurveyBatchSize'=>array(
@@ -259,7 +259,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                     'htmlOptions'=>array(
                         'min'=>1,
                     ),
-                    'label'=>$this->translate->gT("Max email to send (invitation + remind) in one batch for this survey."),
+                    'label'=>$this->_translate("Max email to send (invitation + remind) in one batch for this survey."),
                     'help'=>$maxBatchHelp,
                     'current'=>$this->get('maxSurveyBatchSize', 'Survey', $iSurveyId,""),
                 ),
@@ -268,8 +268,8 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                     'htmlOptions'=>array(
                         'min'=>0,
                     ),
-                    'label'=>$this->translate->gT("Max email to send for invitation in one batch for this survey."),
-                    'help'=>$this->translate->gT("The max email setting can not be exceeded."),
+                    'label'=>$this->_translate("Max email to send for invitation in one batch for this survey."),
+                    'help'=>$this->_translate("The max email setting can not be exceeded."),
                     'current'=>$this->get('maxSurveyBatchSize_invite', 'Survey', $iSurveyId,""),
                 ),
                 'maxSurveyBatchSize_remind'=>array(
@@ -277,33 +277,33 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                     'htmlOptions'=>array(
                         'min'=>0,
                     ),
-                    'label'=>$this->translate->gT("Max email to send for reminder in one batch for this survey."),
-                    'help'=>$this->translate->gT("The max email setting can not be exceeded. Reminders are sent after invitation, using the remainder of sends available."),
+                    'label'=>$this->_translate("Max email to send for reminder in one batch for this survey."),
+                    'help'=>$this->_translate("The max email setting can not be exceeded. Reminders are sent after invitation."),
                     'current'=>$this->get('maxSurveyBatchSize_remind', 'Survey', $iSurveyId,""),
                 ),
                 'dayOfWeekToSend'=>array(
                     'type'=>'select',
                     'htmlOptions'=>array(
                         'multiple'=>'multiple',
-                        'empty'=>$this->translate->gT("All week days"),
+                        'empty'=>$this->_translate("All week days"),
                     ),
                     'selectOptions'=>array(
-                        'placeholder' =>$this->translate->gT("All week days"),
+                        'placeholder' =>$this->_translate("All week days"),
                         'allowClear'=> true,
                         'width'=>'100%',
                     ),
                     'controlOptions'=>array(
                         'class'=>'search-100',
                     ),
-                    'label'=>$this->translate->gT("Day of week for sending email"),
+                    'label'=>$this->_translate("Day of week for sending email"),
                     'options'=>array(
-                        1=>$this->translate->gT("Monday"),
-                        2=>$this->translate->gT("Thursday"),
-                        3=>$this->translate->gT("Wednesday"),
-                        4=>$this->translate->gT("Thuesday"),
-                        5=>$this->translate->gT("Friday"),
-                        6=>$this->translate->gT("Saturday"),
-                        7=>$this->translate->gT("Sunday"),
+                        1=>$this->_translate("Monday"),
+                        2=>$this->_translate("Thursday"),
+                        3=>$this->_translate("Wednesday"),
+                        4=>$this->_translate("Thuesday"),
+                        5=>$this->_translate("Friday"),
+                        6=>$this->_translate("Saturday"),
+                        7=>$this->_translate("Sunday"),
                     ),
                     'current'=>$this->get('dayOfWeekToSend', 'Survey', $iSurveyId,array()),
                 ),
@@ -315,7 +315,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                 foreach($availCronTypes as $cronType){
                     $cronTypesOtions[$cronType]=$cronType;
                 }
-                $emptyLabel=$this->get('cronTypeNone',null,null,$this->settings['cronTypeNone']['default']) ? $this->translate->gT("Only if no moment is set") : $this->translate->gT("At all moment");
+                $emptyLabel=$this->get('cronTypeNone',null,null,$this->settings['cronTypeNone']['default']) ? $this->_translate("Only if no moment is set") : $this->_translate("At all moment");
                 $aSettings['cronTypes']=array(
                     'type'=>'select',
                     'htmlOptions'=>array(
@@ -330,7 +330,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                     'controlOptions'=>array(
                         'class'=>'search-100',
                     ),
-                    'label'=>$this->translate->gT("Moment for emailing"),
+                    'label'=>$this->_translate("Moment for emailing"),
                     'options'=>$cronTypesOtions,
                     'current'=>$this->get('cronTypes', 'Survey', $iSurveyId,array()),
                 );
@@ -340,13 +340,13 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                 $aSettings['reminderOnlyTo']=array(
                     'type'=>'select',
                     'htmlOptions'=>array(
-                        'empty'=>$this->translate->gT("all participants"),
+                        'empty'=>$this->_translate("all participants"),
                     ),
                     'options'=>array(
-                        'started'=>$this->translate->gT("participants who did not started survey."),
-                        'notstarted'=>$this->translate->gT("participants who started survey."),
+                        'started'=>$this->_translate("participants who did not started survey."),
+                        'notstarted'=>$this->_translate("participants who started survey."),
                     ),
-                    'label'=>$this->translate->gT("Send reminders to "),
+                    'label'=>$this->_translate("Send reminders to "),
                     'current'=>$this->get('reminderOnlyTo', 'Survey', $iSurveyId,''),
                 );
             }
