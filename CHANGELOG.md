@@ -2,7 +2,7 @@
 
 Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSurvey-plugin/sendMailCron/commits/master) show all changelog.
 
-## Unreleased
+## [0.3.1] - 2017-03-16
 
 ### Feature
 
