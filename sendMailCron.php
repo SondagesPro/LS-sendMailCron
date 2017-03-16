@@ -393,10 +393,9 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         Yii::import('application.helpers.replacements_helper', true);
         Yii::import('application.helpers.expressions.em_manager_helper', true);
         // Fix the url @todo parse url and validate
-        Yii::app()->request->hostInfo=stripslashes($this->getSetting("hostInfo"));
-        Yii::app()->request->baseUrl=stripslashes($this->getSetting("baseUrl"));
-        Yii::app()->request->scriptUrl=stripslashes($this->getSetting("scriptUrl"));
-
+        Yii::app()->request->hostInfo=$this->getSetting("hostInfo");
+        Yii::app()->request->baseUrl=$this->getSetting("baseUrl");
+        Yii::app()->request->scriptUrl=$this->getSetting("scriptUrl");
         if($oSurveys)
         {
             foreach ($oSurveys as $oSurvey)
@@ -822,12 +821,13 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                     }
                 }
             }else{
+                $sTo=implode(";",$aTo);
                 if($maildebug){
                     $this->sendMailCronLog("Unknow error when send email to {$sTo} ({$iSurvey}) : ".$maildebug);
                 }else{
                     $this->sendMailCronLog("Unknow error when send email to {$sTo} ({$iSurvey})");
                 }
-                $iErrorMail++;
+                $aCountMail['error']++;
             }
         }
         $this->sendMailCronFinalLog($aCountMail);
@@ -893,7 +893,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         }
         if($oSetting && !is_null($oSetting->value))
         {
-            return trim($oSetting->value,'"');
+            return trim(stripslashes($oSetting->value),'"');
         }
         else
             return $default;
