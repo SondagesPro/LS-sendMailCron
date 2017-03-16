@@ -16,6 +16,7 @@ Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSur
 
 ### Fix
 
+- stripslashes for some server configuration.
 - Better simulation
 - LimeSurvey 3.0 compatibility quick fix
 - Add beforeTokenEmail event when send an email

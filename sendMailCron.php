@@ -4,10 +4,10 @@
  * Need activate cron system in the server : php yourlimesurveydir/application/commands/console.php plugin cron --interval=X where X is interval in minutes
  *
  * @author Denis Chenu <denis@sondages.pro>
- * @copyright 2016 Denis Chenu <http://www.sondages.pro>
+ * @copyright 2016-2017 Denis Chenu <https://www.sondages.pro>
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> for the 0.1.0 version
  * @license AGPL v3
- * @version 0.2.0
+ * @version 0.2.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -374,9 +374,9 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         Yii::import('application.helpers.replacements_helper', true);
         Yii::import('application.helpers.expressions.em_manager_helper', true);
         // Fix the url @todo parse url and validate
-        Yii::app()->request->hostInfo=$this->getSetting("hostInfo");
-        Yii::app()->request->baseUrl=$this->getSetting("baseUrl");
-        Yii::app()->request->scriptUrl=$this->getSetting("scriptUrl");
+        Yii::app()->request->hostInfo=stripslashes($this->getSetting("hostInfo"));
+        Yii::app()->request->baseUrl=stripslashes($this->getSetting("baseUrl"));
+        Yii::app()->request->scriptUrl=stripslashes($this->getSetting("scriptUrl"));
 
         if($oSurveys)
         {
