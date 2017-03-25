@@ -5,7 +5,9 @@
  *
  * @author Denis Chenu <denis@sondages.pro>
  * @copyright 2016-2017 Denis Chenu <https://www.sondages.pro>
- * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> for the 0.1.0 version
+ * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> for initial version
+ * @copyright 2016-2017 Extract Recherche Marketing for cronTypes and BatchSize
+
  * @license AGPL v3
  * @version 0.3.2
  *
