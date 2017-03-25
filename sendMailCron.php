@@ -7,7 +7,7 @@
  * @copyright 2016-2017 Denis Chenu <https://www.sondages.pro>
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> for the 0.1.0 version
  * @license AGPL v3
- * @version 0.3.1
+ * @version 0.3.2
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -625,8 +625,8 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             //~ $dFrom=date("Y-m-d H:i",strtotime("-".intval($this->config['inviteafter'])." days",$dtToday));// valid is 3 day before and up
         if($sType=='remind')
         {
-            $dAfterSent=date("Y-m-d H:i",strtotime("-".intval($dayDelayReminder)." days",$dtToday));// sent is X day before and up
-            $dAfterSentInvitation=date("Y-m-d H:i",strtotime("-".intval($delayInvitation)." days",$dtToday));// sent is X day before and up
+            $dAfterSentRemind=date("Y-m-d H:i",strtotime("-".intval($dayDelayReminder)." days",$dtToday));// sent is X day before and up
+            $dAfterSent=date("Y-m-d H:i",strtotime("-".intval($delayInvitation)." days",$dtToday));// sent is X day before and up
         }
         $dTomorrow=dateShift(date("Y-m-d H:i", time() + 86400 ), "Y-m-d H:i", Yii::app()->getConfig("timeadjust"));// Tomorrow for validuntil
         $this->sendMailCronLog("Survey {$iSurvey}, {$sType} Valid from {$dFrom} And Valid until {$dTomorrow} (or NULL)",3);
@@ -638,12 +638,19 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             $oCriteria->addCondition("(sent = 'N' OR sent = '' OR sent IS NULL)");
         }
         if($sType=='remind'){
+            /* Not sent condition */
             $oCriteria->addCondition("(sent != 'N' AND sent != '' AND sent IS NOT NULL)");
         }
         if($sType=='remind'){
-            $oCriteria->addCondition("((sent < :sent) AND (remindercount = '' OR remindercount IS NULL OR remindercount > 0)) OR ((sent < :sentinvite) AND (remindercount = '' OR remindercount IS NULL OR remindercount < 1))");
+            /* Day after sent AND remind*/
+            $oCriteria->addCondition("(
+                (remindersent < :remindersent)
+            ) OR (
+                (sent < :sent) AND (remindercount = '' OR remindercount IS NULL OR remindercount < 1)
+            )");
         }
         if($sType=='remind'){
+            /* Day after remind */
             $oCriteria->addCondition("remindercount < :remindercount  OR remindercount = '' OR remindercount IS NULL");
         }
         if($sType=='remind'){ /* add order criteria */
@@ -663,8 +670,8 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             $oCriteria->params = array(
                 ':validfrom'=>$dFrom,
                 ':validuntil'=>$dTomorrow,
+                ':remindersent'=>strval($dAfterSentRemind),
                 ':sent'=>strval($dAfterSent),
-                ':sentinvite'=>strval($dAfterSentInvitation),
                 ':remindercount'=>$maxReminder
             );
         }
