@@ -7,7 +7,6 @@
  * @copyright 2016-2017 Denis Chenu <https://www.sondages.pro>
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> for initial version
  * @copyright 2016-2017 Extract Recherche Marketing for cronTypes and BatchSize
-
  * @license AGPL v3
  * @version 0.3.2
  *
@@ -634,50 +633,46 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         $this->sendMailCronLog("Survey {$iSurvey}, {$sType} Valid from {$dFrom} And Valid until {$dTomorrow} (or NULL)",3);
         $oCriteria = new CDbCriteria;
         $oCriteria->select = "tid";
+        /* Always needed condition */
         $oCriteria->addCondition("emailstatus = 'OK'");
         $oCriteria->addCondition("token != ''");
-        if($sType=='invite'){
-            $oCriteria->addCondition("(sent = 'N' OR sent = '' OR sent IS NULL)");
-        }
-        if($sType=='remind'){
-            /* Not sent condition */
-            $oCriteria->addCondition("(sent != 'N' AND sent != '' AND sent IS NOT NULL)");
-        }
-        if($sType=='remind'){
-            /* Day after sent AND remind*/
-            $oCriteria->addCondition("(
-                (remindersent < :remindersent)
-            ) OR (
-                (sent < :sent) AND (remindercount = '' OR remindercount IS NULL OR remindercount < 1)
-            )");
-        }
-        if($sType=='remind'){
-            /* Day after remind */
-            $oCriteria->addCondition("remindercount < :remindercount  OR remindercount = '' OR remindercount IS NULL");
-        }
-        if($sType=='remind'){ /* add order criteria */
-            $oCriteria->order="remindercount desc,sent asc";
-        }
         $oCriteria->addCondition("(completed = 'N' OR completed = '' OR completed  IS NULL)");
         $oCriteria->addCondition("usesleft>0");
         $oCriteria->addCondition("(validfrom < :validfrom OR validfrom IS NULL)");
         $oCriteria->addCondition("(validuntil > :validuntil OR validuntil IS NULL)");
-        if($sType=='invite'){
-            $oCriteria->params = array(
-                ':validfrom'=>$dFrom,
-                ':validuntil'=>$dTomorrow
-            );
+        $aParams=array(
+            ':validfrom'=>$dFrom,
+            ':validuntil'=>$dTomorrow,
+        );
+        switch ($sType) {
+            case 'invite':
+                /* Not sent condition */
+                $oCriteria->addCondition("(sent = 'N' OR sent = '' OR sent IS NULL)");
+                break;
+            case 'remind':
+                /* sent condition */
+                $oCriteria->addCondition("(sent != 'N' AND sent != '' AND sent IS NOT NULL)");
+                /* Delay by settings condition */
+                $oCriteria->addCondition("(
+                    remindersent < :remindersent AND (remindercount != '' AND remindercount IS NOT NULL AND remindercount > 0)
+                ) OR (
+                    sent < :sent AND (remindercount = '' OR remindercount IS NULL OR remindercount < 1)
+                )");
+                /* Max by settings condition */
+                $oCriteria->addCondition("remindercount < :remindercount  OR remindercount = '' OR remindercount IS NULL");
+                $aParams=array_merge($aParams,array(
+                    ':remindersent'=>strval($dAfterSentRemind),
+                    ':sent'=>strval($dAfterSent),
+                    ':remindercount'=>$maxReminder,
+                ));
+                break;
+            default:
+                /* Break for invalid */
+                throw new Exception("Invalid email type {$sType} in sendMailCron.");
+                return 1;
         }
-        if($sType=='remind'){
-            $oCriteria->params = array(
-                ':validfrom'=>$dFrom,
-                ':validuntil'=>$dTomorrow,
-                ':remindersent'=>strval($dAfterSentRemind),
-                ':sent'=>strval($dAfterSent),
-                ':remindercount'=>$maxReminder
-            );
-        }
-        # Send invite
+        $oCriteria->params=$aParams;
+        # Send email
         // Find all token
         $oTokens=TokenDynamic::model($iSurvey)->findAll($oCriteria);
         $aCountMail['total']=count($oTokens);
