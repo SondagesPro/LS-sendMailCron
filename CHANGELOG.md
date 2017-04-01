@@ -2,11 +2,12 @@
 
 Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSurvey-plugin/sendMailCron/commits/master) show all changelog.
 
-## Not released [0.3.2]
+## [0.4.0] - 2017-03-16
 
 ### Fix
 
 - Send after reminder tested
+- message and subject updated by beforeTokenEmail event
 
 
 ## [0.3.1] - 2017-03-16

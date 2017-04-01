@@ -8,7 +8,7 @@
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> for initial version
  * @copyright 2016-2017 Extract Recherche Marketing for cronTypes and BatchSize
  * @license AGPL v3
- * @version 0.3.2
+ * @version 0.4.0
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -778,8 +778,8 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                 $beforeTokenEmailEvent->set('bounce', $sBounce);
                 $beforeTokenEmailEvent->set('token', $oToken->attributes);
                 App()->getPluginManager()->dispatchEvent($beforeTokenEmailEvent);
-                $modsubject = $beforeTokenEmailEvent->get('subject');
-                $modmessage = $beforeTokenEmailEvent->get('body');
+                $subject = $beforeTokenEmailEvent->get('subject');
+                $message = $beforeTokenEmailEvent->get('body');
                 $aTo = $beforeTokenEmailEvent->get('to');
                 $sFrom = $beforeTokenEmailEvent->get('from');
                 $sBounce = $beforeTokenEmailEvent->get('bounce');
