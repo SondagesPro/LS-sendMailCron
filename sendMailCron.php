@@ -1003,7 +1003,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                 $this->sendMailCronLog("{$aCountMail['sent']} messages sent",1);
             }
             if($aCountMail['invalid']){
-                $this->sendMailCronLog("{$aCountMail['invalid']} invalid email adress",1);
+                $this->sendMailCronLog("{$aCountMail['invalid']} invalid email address",1);
             }
             if($aCountMail['started']){
                 $this->sendMailCronLog("{$aCountMail['started']} already started survey",2);
