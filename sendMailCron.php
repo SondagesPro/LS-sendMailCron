@@ -8,7 +8,7 @@
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> for initial version
  * @copyright 2016-2017 Extract Recherche Marketing for cronTypes and BatchSize
  * @license AGPL v3
- * @version 0.4.0
+ * @version 1.0.0
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -140,7 +140,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
     {
         /* Action on cron */
         $this->subscribe('cron','sendMailByCron');
-        /* Needed gonfig */
+        /* Needed config */
         $this->subscribe('beforeActivate');
 
         /* The survey seeting */
@@ -202,7 +202,6 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
     public function beforeSurveySettings()
     {
         Yii::setPathOfAlias('sendMailCron', dirname(__FILE__));
-        Yii::import("sendMailCron.sendMailCronTranslate");
         $assetsUrl=Yii::app()->assetManager->publish(dirname(__FILE__) . '/assets');
         Yii::app()->getClientScript()->registerCssFile($assetsUrl.'/admin.css');
         $event = $this->event;
@@ -374,6 +373,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
      */
     public function sendMailByCron()
     {
+        $this->_LsCommandFix();
         $this->_setConfigs();
         $this->setArgs();
         if($this->disable){
@@ -1017,6 +1017,20 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         }
     }
 
+    /**
+     * Fix LimeSurvey command function
+     * @todo : find way to control API
+     * OR if another plugin already fix it
+     */
+    private function _LsCommandFix()
+    {
+        /* Bad autoloading in command */
+        include_once(dirname(__FILE__)."/DbStorage.php");
+        // These take care of dynamically creating a class for each token / response table.
+        Yii::import('application.helpers.ClassFactory');
+        ClassFactory::registerClass('Token_', 'Token');
+        ClassFactory::registerClass('Response_', 'Response');
+    }
     /**
      * get translation
      * @param string

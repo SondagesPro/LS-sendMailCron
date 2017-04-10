@@ -2,6 +2,12 @@
 
 Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSurvey-plugin/sendMailCron/commits/master) show all changelog.
 
+## Not released
+
+### Fix
+
+- Really allow to use all other plugins in Command
+
 ## [0.4.0] - 2017-03-16
 
 ### Fix
