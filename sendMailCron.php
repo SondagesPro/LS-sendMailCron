@@ -8,7 +8,7 @@
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> for initial version
  * @copyright 2016-2017 Extract Recherche Marketing for cronTypes and BatchSize
  * @license AGPL v3
- * @version 1.0.0
+ * @version 1.0.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -674,7 +674,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         $oCriteria->params=$aParams;
         # Send email
         // Find all token
-        $oTokens=TokenDynamic::model($iSurvey)->findAll($oCriteria);
+        $oTokens=Token::model($iSurvey)->findAll($oCriteria);
         $aCountMail['total']=count($oTokens);
         $this->sendMailCronLog("Sending $sType",1);
         foreach ($oTokens as $iToken)
@@ -683,7 +683,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             if($this->stopSendMailAction($aCountMail,$iSurvey,$sType)){
                 return;
             }
-            $oToken=TokenDynamic::model($iSurvey)->findByPk($iToken->tid);
+            $oToken=Token::model($iSurvey)->findByPk($iToken->tid);
             /* Find if need to already started or not */
             if($controlResponse){
                 $oResponse=SurveyDynamic::model($iSurvey)->find("token=:token",array(":token"=>$oToken->token));
@@ -801,28 +801,14 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                 $this->currentBatchSize++;
                 $this->currentSurveyBatchSize++;
                 if(!$this->simulate){
-                $oCommand=Yii::app()->db->createCommand();
                     if($sType=='invite'){
-                        $oCommand->update(
-                            "{{tokens_{$iSurvey}}}",
-                            array(
-                                'sent'=>dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i", Yii::app()->getConfig("timeadjust")),
-                            ),
-                            "tid=:tid",
-                            array(":tid"=>$oToken->tid)
-                        );
+                        $oToken->sent=dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i", Yii::app()->getConfig("timeadjust"));
                     }
                     if($sType=='remind'){
-                        $oCommand->update(
-                            "{{tokens_{$iSurvey}}}",
-                            array(
-                                'remindersent'=>dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i", Yii::app()->getConfig("timeadjust")),
-                                'remindercount'=>$oToken->remindercount+1,
-                            ),
-                            "tid=:tid",
-                            array(":tid"=>$oToken->tid)
-                        );
+                        $oToken->remindersent=dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i", Yii::app()->getConfig("timeadjust"));
+                        $oToken->remindercount++;
                     }
+                    $oToken->save();
                 }
             }else{
                 $sTo=implode(";",$aTo);

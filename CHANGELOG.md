@@ -4,8 +4,8 @@ Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSur
 
 ## Not released
 
-### Fix
-
+### Feature
+- Use Token model, allowing to use beforeTokenSave event
 - Really allow to use all other plugins in Command
 
 ## [0.4.0] - 2017-03-16
