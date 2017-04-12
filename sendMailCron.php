@@ -803,19 +803,26 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                 if(!$this->simulate){
                     if($sType=='invite'){
                         $oToken->sent=dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i", Yii::app()->getConfig("timeadjust"));
+                        $txtLog="sent set to ".$oToken->sent;
                     }
                     if($sType=='remind'){
                         $oToken->remindersent=dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i", Yii::app()->getConfig("timeadjust"));
                         $oToken->remindercount++;
+                        $txtLog="remindersent set to ".$oToken->remindersent." count:".$oToken->remindercount;
                     }
-                    $oToken->save();
+                    if($oToken->save()) {
+                        $this->sendMailCronLog("Email {$oToken->email} : $txtLog",3);
+                    } else {
+                        $error=CVarDumper::dumpAsString($oToken->getErrors(), 3, false);
+                        $this->sendMailCronLog("Email {$oToken->email} error: $error");
+                    }
                 }
             }else{
                 $sTo=implode(";",$aTo);
                 if($maildebug){
-                    $this->sendMailCronLog("Unknow error when send email to {$sTo} ({$iSurvey}) : ".$maildebug);
+                    $this->sendMailCronLog("Unknow error when send email to {$oToken->email} ({$iSurvey}) : ".$maildebug);
                 }else{
-                    $this->sendMailCronLog("Unknow error when send email to {$sTo} ({$iSurvey})");
+                    $this->sendMailCronLog("Unknow error when send email to {$oToken->email} ({$iSurvey})");
                 }
                 $aCountMail['error']++;
             }
