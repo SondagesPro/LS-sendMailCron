@@ -635,6 +635,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         $oCriteria->select = "tid";
         /* Always needed condition */
         $oCriteria->addCondition("emailstatus = 'OK'");
+        $oCriteria->addCondition("email != '' and email IS NOT NULL");
         $oCriteria->addCondition("token != ''");
         $oCriteria->addCondition("(completed = 'N' OR completed = '' OR completed  IS NULL)");
         $oCriteria->addCondition("usesleft>0");

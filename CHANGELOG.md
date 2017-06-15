@@ -4,7 +4,12 @@ Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSur
 
 ## Not released
 
+### Fix
+
+- Don't try to send message to empty email 
+
 ### Feature
+
 - Use Token model, allowing to use beforeTokenSave event
 - Really allow to use all other plugins in Command
 
