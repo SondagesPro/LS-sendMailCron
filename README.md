@@ -11,10 +11,10 @@ Allow to send token email (invite or reminder) via PHP cli . This allow to use c
 - Clone in plugins/sendMailCron directory
 
 ### Via ZIP dowload
-- Get the file at http://extensions.sondages.pro/IMG/auto/sendMailCron.zip
+- Get the file [sendMailCron.zip](http://extensions.sondages.pro/IMG/auto/sendMailCron.zip) (If you use LimeSurvey 2.54.4 or up)
 - Extract : `unzip sendMailCron.zip`
 - Move the directory to plugins/ directory inside LimeSUrvey
-
+- If you use LimeSurvey 2.54.3 or below : use [sendMailCron_2.6lts_compat.zip](http://extensions.sondages.pro/IMG/auto/sendMailCron_2.6lts_compat.zip)
 ## Usage
 
 - When activated the plugin settings are updated to use the actual url for email. This can be updated at any time
@@ -26,8 +26,9 @@ Allow to send token email (invite or reminder) via PHP cli . This allow to use c
   - Same and more in each surveys setting
   - If plugin validate the email (this allow only one email by token)
   - The cron type list to be allowed in survey settings
-- To test the plugin you need to call it via PHP Cli `php yourlimesurveydir/application/commands/console.php plugin cron --interval=1` (remind: it send email in this way)
+- To test the plugin you need to call it via PHP Cli `php yourlimesurveydir/application/commands/console.php plugin cron --interval=1 sendMailCronSimulate=1`
 - This line can be added in your crontab or Task Scheduler
+- Per survey settings are found on Tools menu
 
 ### Params
 
