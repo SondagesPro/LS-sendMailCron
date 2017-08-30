@@ -1,30 +1,46 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: sendMailCron\n"
-"POT-Creation-Date: 2017-03-16 15:03+0100\n"
-"PO-Revision-Date: 2017-03-16 15:04+0100\n"
+"POT-Creation-Date: 2017-08-30 18:46+0200\n"
+"PO-Revision-Date: 2017-08-30 18:50+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.8.12\n"
+"X-Generator: Poedit 2.0.3\n"
 "X-Poedit-Basepath: ..\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Poedit-KeywordsList: _translate\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 "X-Poedit-SearchPath-0: .\n"
 
-#: sendMailCron.php:218
+#: sendMailCron.php:215
+msgid "Mail by cron settings"
+msgstr "Paramètres courriel par cron"
+
+#: sendMailCron.php:219
+msgid "Remind to save your settings before"
+msgstr "Sauvegardez vos paramètres avant"
+
+#: sendMailCron.php:220
+msgid "Edit email by cron settings"
+msgstr "Édition des paramètres des courriels par cron"
+
+#: sendMailCron.php:897
+msgid "Mail cron"
+msgstr "Courriels par cron"
+
+#: sendMailCron.php:932
 msgid "disabled"
 msgstr "désactivé"
 
-#: sendMailCron.php:224
+#: sendMailCron.php:938
 msgid "Leave empty to send all available emails."
 msgstr "Laisser vide pour envoyer tous les messages possibles"
 
-#: sendMailCron.php:226
+#: sendMailCron.php:940
 #, php-format
 msgid ""
 "Leave empty to send all available emails,only limited by global batch size "
@@ -33,50 +49,58 @@ msgstr ""
 "Laisser vide pour envoyer tous les messages possibles, seulement limité par "
 "la taille du lot global (%s) de tous les questionnaires/"
 
-#: sendMailCron.php:235
+#: sendMailCron.php:950
+msgid "Basic settings"
+msgstr "Paramètres de base"
+
+#: sendMailCron.php:956
 msgid "Max email to send (invitation + remind) to each participant."
 msgstr ""
 "Nombre de messages maximum à envoyer (invitation et rappel(s)) à chaque "
 "participant"
 
-#: sendMailCron.php:236
+#: sendMailCron.php:957
 #, php-format
 msgid "0 to deactivate sending of email, empty to use default (%s)"
 msgstr ""
 "0 pour désactiver l'envoi de messages, vide pour utiliser le défaut (%s)"
 
-#: sendMailCron.php:244
+#: sendMailCron.php:965
 msgid "Min delay between invitation and first reminder."
 msgstr "Délais minimum entre l'invitation et le premier rappel."
 
-#: sendMailCron.php:245 sendMailCron.php:254
+#: sendMailCron.php:966 sendMailCron.php:975
 #, php-format
 msgid "In days, empty for default (%s)"
 msgstr "En jours, vide pour le défaut (%s)"
 
-#: sendMailCron.php:253
+#: sendMailCron.php:974
 msgid "Min delay between reminders."
 msgstr "Délais minimums entre les rappels"
 
-#: sendMailCron.php:262
+#: sendMailCron.php:979
+msgid "Batch size"
+msgstr "Taille des lots"
+
+#: sendMailCron.php:985
 msgid "Max email to send (invitation + remind) in one batch for this survey."
 msgstr ""
 "Nombre maximum de messages à envoyer (invitations et rappels) par lot pour "
 "ce questionnaire."
 
-#: sendMailCron.php:271
+#: sendMailCron.php:994
 msgid "Max email to send for invitation in one batch for this survey."
 msgstr "Nombre maximum d'invitations par lot pour ce questionnaire."
 
-#: sendMailCron.php:272
+#: sendMailCron.php:995
 msgid "The max email setting can not be exceeded."
 msgstr "Le nombre maximum de messages par lot ne sera pas dépassé."
 
-#: sendMailCron.php:280
+#: sendMailCron.php:1003
 msgid "Max email to send for reminder in one batch for this survey."
 msgstr "Nombre maximum de rappels par lot pour ce questionnaire."
 
-#: sendMailCron.php:281
+#: sendMailCron.php:1004
 msgid ""
 "The max email setting can not be exceeded. Reminders are sent after "
 "invitation."
@@ -84,69 +108,73 @@ msgstr ""
 "Le nombre maximum de messages par lot ne sera pas dépassé. Les rappels sont "
 "envoyés après les invitations."
 
-#: sendMailCron.php:288 sendMailCron.php:291
+#: sendMailCron.php:1013 sendMailCron.php:1016
 msgid "All week days"
 msgstr "Tous les jours de semaine"
 
-#: sendMailCron.php:298
+#: sendMailCron.php:1023
 msgid "Day of week for sending email"
 msgstr "Jours de la semaine pour envoyer les messages"
 
-#: sendMailCron.php:300
+#: sendMailCron.php:1025
 msgid "Monday"
 msgstr "Lundi"
 
-#: sendMailCron.php:301
+#: sendMailCron.php:1026
 msgid "Thursday"
 msgstr "Mardi"
 
-#: sendMailCron.php:302
+#: sendMailCron.php:1027
 msgid "Wednesday"
 msgstr "Mercredi"
 
-#: sendMailCron.php:303
+#: sendMailCron.php:1028
 msgid "Thuesday"
 msgstr "Jeudi"
 
-#: sendMailCron.php:304
+#: sendMailCron.php:1029
 msgid "Friday"
 msgstr "Vendredi"
 
-#: sendMailCron.php:305
+#: sendMailCron.php:1030
 msgid "Saturday"
 msgstr "Samedi"
 
-#: sendMailCron.php:306
+#: sendMailCron.php:1031
 msgid "Sunday"
 msgstr "Dimanche"
 
-#: sendMailCron.php:318
+#: sendMailCron.php:1044
 msgid "Only if no moment is set"
 msgstr "Seulement si le moment n'est pas indiqué"
 
-#: sendMailCron.php:318
+#: sendMailCron.php:1044
 msgid "At all moment"
 msgstr "À tous les moments"
 
-#: sendMailCron.php:333
+#: sendMailCron.php:1059
 msgid "Moment for emailing"
 msgstr "Moment pour l'envoi des messages"
 
-#: sendMailCron.php:343
-msgid "all participants"
-msgstr "tous les participants"
+#: sendMailCron.php:1065
+msgid "When email must be sent"
+msgstr "Quand les messages doivent être envoyés"
 
-#: sendMailCron.php:346
-msgid "participants who did not started survey."
-msgstr "participants qui n'ont pas commencé le questionnaire"
+#: sendMailCron.php:1068
+msgid "Send email by cron settings"
+msgstr "Paramètres des envois de messages courriels par cron"
 
-#: sendMailCron.php:347
-msgid "participants who started survey."
-msgstr "participants qui ont commencé le questionnaire"
+#~ msgid "all participants"
+#~ msgstr "tous les participants"
 
-#: sendMailCron.php:349
-msgid "Send reminders to "
-msgstr "Envoi des relance à "
+#~ msgid "participants who did not started survey."
+#~ msgstr "participants qui n'ont pas commencé le questionnaire"
+
+#~ msgid "participants who started survey."
+#~ msgstr "participants qui ont commencé le questionnaire"
+
+#~ msgid "Send reminders to "
+#~ msgstr "Envoi des relance à "
 
 #~ msgid ""
 #~ "The max email setting can not be exceeded. Reminders are sent after "

@@ -212,12 +212,12 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                 'settings' => array(
                     'gotosettings'=>array(
                     'type'=>'link',
-                    'label'=>$this->_translate('Cron settings'),
+                    'label'=>$this->_translate('Mail by cron settings'),
                     'htmlOptions'=>array(
-                        'title'=>gt('Edit cron settings'),
+                        'title'=>gt('This open another page'),
                     ),
-                    'help'=>$this->_translate('This open a new page remind to save your settings before'),
-                    'text'=>$this->_translate('Edit cron settings'),
+                    'help'=>$this->_translate('Remind to save your settings before'),
+                    'text'=>$this->_translate('Edit email by cron settings'),
                     'class'=>'btn btn-link',
                     'link'=>Yii::app()->createUrl('admin/pluginhelper',array('sa' => 'sidebody','plugin' => get_class($this),'method' => 'actionSettings','surveyId' => $iSurveyId)),
                     ),
@@ -1065,6 +1065,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         $aSettings[$this->_translate('When email must be sent')]=$whenSettings;
         $aData['pluginClass']=get_class($this);
         $aData['surveyId']=$surveyId;
+        $aData['title']=$this->_translate("Send email by cron settings");
         $aData['aSettings']=$aSettings;
         $aData['assetUrl']=Yii::app()->assetManager->publish(dirname(__FILE__) . '/assets/');
         $content = $this->renderPartial('settings', $aData, true);
