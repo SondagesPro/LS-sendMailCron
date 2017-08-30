@@ -2,7 +2,7 @@
 
 Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSurvey-plugin/sendMailCron/commits/master) show all changelog.
 
-## Not released
+## [2.0.0] - 2017-08-30
 
 - Move settings to dedicated page (break 2.6 compatibility)
 
