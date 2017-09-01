@@ -2,7 +2,6 @@
 Allow to send token email (invite or reminder) via PHP cli . This allow to use crontab or Scheduled task to send email.
 
 ## Installation
-
 - This plugin is only tested with LimeSurvey 2.06. Tested on 2.50 build (always use latest build if possible)
 - In some LimeSurvey version : you need to manually create the `./application/runtime` to use CFileLogRoute ([See LimeSurvey manual](https://manual.limesurvey.org/Cron)).
 
@@ -15,6 +14,7 @@ Allow to send token email (invite or reminder) via PHP cli . This allow to use c
 - Extract : `unzip sendMailCron.zip`
 - Move the directory to plugins/ directory inside LimeSUrvey
 - If you use LimeSurvey 2.54.3 or below : use [sendMailCron_2.6lts_compat.zip](http://extensions.sondages.pro/IMG/auto/sendMailCron_2.6lts_compat.zip)
+
 ## Usage
 
 - When activated the plugin settings are updated to use the actual url for email. This can be updated at any time
