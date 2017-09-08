@@ -1,6 +1,6 @@
 <div class="row">
     <div class="col-lg-12 content-right">
-        <h3>Send mail cron settings</h3>
+        <h3><?php echo $title ?></h3>
         <?php if($warningString) {
             echo CHtml::tag("p",array('class'=>'alert alert-warning'),$warningString);
         } ?>
