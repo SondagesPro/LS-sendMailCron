@@ -2,6 +2,13 @@
 
 Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSurvey-plugin/sendMailCron/commits/master) show all changelog.
 
+## [2.1.0] - Unreleased
+
+### Feature
+
+- Move settings to own page
+- Add restriction by attribute
+
 ## [1.1.0] - 2017-06-15
 
 ### Fix

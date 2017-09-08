@@ -8,7 +8,7 @@
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> for initial version
  * @copyright 2016-2017 Extract Recherche Marketing for cronTypes and BatchSize
  * @license AGPL v3
- * @version 1.1.0
+ * @version 2.1.0
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -52,6 +52,13 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
      * @var int SurveyBatchSize Count for this batch of actual survey
      */
     private $currentSurveyBatchSize;
+
+    /**
+     * @var string|null final attributes to be used (for this survey)
+     */
+    private $surveyMaxEmailAttributes;
+    private $surveyDelayInvitationAttribute;
+    private $surveyDelayReminderAttribute;
 
     /**
      * @var array[] the settings
@@ -115,6 +122,32 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             'label'=>"Validate email before try to send it.",
             'default'=>0,
         ),
+        'maxEmailAttribute' => array(
+            'type'=>'int',
+            'htmlOptions'=>array(
+                'min'=>1,
+            ),
+            'label'=>"Default token attribute to use for max email to send (invitation + remind).",
+            'default'=>"",
+        ),
+        'delayInvitationAttribute' => array (
+            'type'=>'int',
+            'htmlOptions'=>array(
+                'min'=>1,
+            ),
+            'label'=>"Default token attribute to use for minimum delay between invitation and first reminder.",
+            'help'=>"If this attribute exist : tested just before sending, then final delay is minimum between global and this attribute",
+            'default'=>"",
+        ),
+        'delayReminderAttribute' => array (
+            'type'=>'int',
+            'htmlOptions'=>array(
+                'min'=>1,
+            ),
+            'label'=>"Default token attribute to use for minimum delay between each reminders.",
+            'help'=>"If this attribute exist : tested just before sending, then final delay is minimum between global and this attribute",
+            'default'=>"",
+        ),
         'cronTypes' => array(
             'type'=>'text',
             'label'=>"Cron moment type.",
@@ -143,9 +176,10 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         /* Needed config */
         $this->subscribe('beforeActivate');
 
+        /* Add the link in menu */
+        $this->subscribe('beforeToolsMenuRender');
         /* The survey seeting */
         $this->subscribe('beforeSurveySettings');
-        $this->subscribe('newSurveySettings');
 
         /* Update Yii config */
         $this->subscribe('afterPluginLoad');
@@ -201,169 +235,26 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
      */
     public function beforeSurveySettings()
     {
-        Yii::setPathOfAlias('sendMailCron', dirname(__FILE__));
-        $assetsUrl=Yii::app()->assetManager->publish(dirname(__FILE__) . '/assets');
-        Yii::app()->getClientScript()->registerCssFile($assetsUrl.'/admin.css');
         $event = $this->event;
         // Must control if token table exist
         $iSurveyId=$event->get('survey');
-        if(tableExists("{{tokens_{$iSurveyId}}}"))
-        {
-            /* get the default settings */
-            $defaultMaxEmail=$this->get('maxEmail', null,null,$this->settings['maxEmail']['default']);
-            if(!$defaultMaxEmail){
-                $defaultMaxEmail=$this->_translate("disabled");
-            }
-            $defaultDelayInvitation=$this->get('delayInvitation', null,null,$this->settings['delayInvitation']['default']);
-            $defaultDelayReminder=$this->get('delayReminder', null,null,$this->settings['delayReminder']['default']);
-            $maxBatchSize=$this->get('maxBatchSize', null,null,$this->settings['maxBatchSize']['default']);
-            if(!$maxBatchSize){
-                $maxBatchHelp=$this->_translate("Leave empty to send all available emails.");
-            }else{
-                $maxBatchHelp=sprintf($this->_translate("Leave empty to send all available emails,only limited by global batch size (%s) for all surveys."),$maxBatchSize);
-            }
-            $oSurvey=Survey::model()->findByPk($iSurveyId);
-            $aSettings=array(
-                'maxEmail' => array(
-                    'type'=>'int',
-                    'htmlOptions'=>array(
-                        'min'=>0,
-                    ),
-                    'label'=>$this->_translate("Max email to send (invitation + remind) to each participant."),
-                    'help'=>sprintf($this->_translate("0 to deactivate sending of email, empty to use default (%s)"),$defaultMaxEmail),
-                    'current'=>$this->get('maxEmail', 'Survey', $iSurveyId,""),
-                ),
-                'delayInvitation' => array(
-                    'type'=>'int',
-                    'htmlOptions'=>array(
-                        'min'=>1,
-                    ),
-                    'label'=>$this->_translate("Min delay between invitation and first reminder."),
-                    'help'=>sprintf($this->_translate("In days, empty for default (%s)"),$defaultDelayInvitation),
-                    'current'=>$this->get('delayInvitation', 'Survey', $iSurveyId,""),
-                ),
-                'delayReminder' => array(
-                    'type'=>'int',
-                    'htmlOptions'=>array(
-                        'min'=>1,
-                    ),
-                    'label'=>$this->_translate("Min delay between reminders."),
-                    'help'=>sprintf($this->_translate("In days, empty for default (%s)"),$defaultDelayReminder),
-                    'current'=>$this->get('delayReminder', 'Survey', $iSurveyId,""),
-                ),
-                'maxSurveyBatchSize'=>array(
-                    'type'=>'int',
-                    'htmlOptions'=>array(
-                        'min'=>1,
-                    ),
-                    'label'=>$this->_translate("Max email to send (invitation + remind) in one batch for this survey."),
-                    'help'=>$maxBatchHelp,
-                    'current'=>$this->get('maxSurveyBatchSize', 'Survey', $iSurveyId,""),
-                ),
-                'maxSurveyBatchSize_invite'=>array(
-                    'type'=>'int',
-                    'htmlOptions'=>array(
-                        'min'=>0,
-                    ),
-                    'label'=>$this->_translate("Max email to send for invitation in one batch for this survey."),
-                    'help'=>$this->_translate("The max email setting can not be exceeded."),
-                    'current'=>$this->get('maxSurveyBatchSize_invite', 'Survey', $iSurveyId,""),
-                ),
-                'maxSurveyBatchSize_remind'=>array(
-                    'type'=>'int',
-                    'htmlOptions'=>array(
-                        'min'=>0,
-                    ),
-                    'label'=>$this->_translate("Max email to send for reminder in one batch for this survey."),
-                    'help'=>$this->_translate("The max email setting can not be exceeded. Reminders are sent after invitation."),
-                    'current'=>$this->get('maxSurveyBatchSize_remind', 'Survey', $iSurveyId,""),
-                ),
-                'dayOfWeekToSend'=>array(
-                    'type'=>'select',
-                    'htmlOptions'=>array(
-                        'multiple'=>'multiple',
-                        'empty'=>$this->_translate("All week days"),
-                    ),
-                    'selectOptions'=>array(
-                        'placeholder' =>$this->_translate("All week days"),
-                        'allowClear'=> true,
-                        'width'=>'100%',
-                    ),
-                    'controlOptions'=>array(
-                        'class'=>'search-100',
-                    ),
-                    'label'=>$this->_translate("Day of week for sending email"),
-                    'options'=>array(
-                        1=>$this->_translate("Monday"),
-                        2=>$this->_translate("Thursday"),
-                        3=>$this->_translate("Wednesday"),
-                        4=>$this->_translate("Thuesday"),
-                        5=>$this->_translate("Friday"),
-                        6=>$this->_translate("Saturday"),
-                        7=>$this->_translate("Sunday"),
-                    ),
-                    'current'=>$this->get('dayOfWeekToSend', 'Survey', $iSurveyId,array()),
-                ),
-            );
-            if($this->get('cronTypes', null, null)){
-                $availCronTypes=$this->get('cronTypes',null,null,$this->settings['cronTypes']['default']);
-                $availCronTypes=explode('|', $availCronTypes);
-                $cronTypesOtions=array();
-                foreach($availCronTypes as $cronType){
-                    $cronTypesOtions[$cronType]=$cronType;
-                }
-                $emptyLabel=$this->get('cronTypeNone',null,null,$this->settings['cronTypeNone']['default']) ? $this->_translate("Only if no moment is set") : $this->_translate("At all moment");
-                $aSettings['cronTypes']=array(
-                    'type'=>'select',
-                    'htmlOptions'=>array(
-                        'multiple'=>'multiple',
-                        'empty'=>$emptyLabel,
-                    ),
-                    'selectOptions'=>array(
-                        'placeholder' =>$emptyLabel,
-                        'allowClear'=> true,
-                        'width'=>'100%',
-                    ),
-                    'controlOptions'=>array(
-                        'class'=>'search-100',
-                    ),
-                    'label'=>$this->_translate("Moment for emailing"),
-                    'options'=>$cronTypesOtions,
-                    'current'=>$this->get('cronTypes', 'Survey', $iSurveyId,array()),
-                );
-            }
-
-            if($oSurvey->anonymized!="Y"){
-                $aSettings['reminderOnlyTo']=array(
-                    'type'=>'select',
-                    'htmlOptions'=>array(
-                        'empty'=>$this->_translate("all participants"),
-                    ),
-                    'options'=>array(
-                        'started'=>$this->_translate("participants who did not started survey."),
-                        'notstarted'=>$this->_translate("participants who started survey."),
-                    ),
-                    'label'=>$this->_translate("Send reminders to "),
-                    'current'=>$this->get('reminderOnlyTo', 'Survey', $iSurveyId,''),
-                );
-            }
-
+        if(Survey::model()->hasTokens($iSurveyId)) {
             $event->set("surveysettings.{$this->id}", array(
-              'name' => get_class($this),
-              'settings' => $aSettings
+                'name' => get_class($this),
+                'settings' => array(
+                    'gotosettings'=>array(
+                    'type'=>'link',
+                    'label'=>$this->_translate('Cron settings'),
+                    'htmlOptions'=>array(
+                        'title'=>gt('Edit cron settings'),
+                    ),
+                    'help'=>$this->_translate('This open a new page remind to save your settings before'),
+                    'text'=>$this->_translate('Edit cron settings'),
+                    'class'=>'btn btn-link',
+                    'link'=>Yii::app()->createUrl('admin/pluginhelper',array('sa' => 'sidebody','plugin' => get_class($this),'method' => 'actionSettings','surveyId' => $iSurveyId)),
+                    ),
+                )
             ));
-        }
-    }
-
-    /**
-     * @see parent::newSurveySettings()
-     */
-    public function newSurveySettings()
-    {
-        $event = $this->event;
-        foreach ($event->get('settings') as $name => $value)
-        {
-            $this->set($name, $value, 'Survey', $event->get('survey'));
         }
     }
 
@@ -414,8 +305,11 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                         continue;
                     }
                     /* By day of week */
-                    $dayOfWeekToSend=$this->getSetting('dayOfWeekToSend','Survey', $iSurvey,"[]");
-                    $aDayOfWeekToSend=array_filter(json_decode($dayOfWeekToSend));
+                    $aDayOfWeekToSend=array();
+                    $dayOfWeekToSend=$this->getSetting('dayOfWeekToSend','Survey', $iSurvey);
+                    if(!empty($dayOfWeekToSend) && !empty(json_decode($dayOfWeekToSend))) {
+                        $aDayOfWeekToSend=array_filter(json_decode($dayOfWeekToSend));
+                    }
                     $todayNum=(string)self::_dateShifted(date("Y-m-d H:i:s"),"N");
                     if(!empty($aDayOfWeekToSend) && !in_array($todayNum,$aDayOfWeekToSend)){
                         $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} for today",1);
@@ -426,7 +320,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                     $availCronTypes=explode('|', $availCronTypes);
                     if(!empty($availCronTypes)){
                         $surveyCronTypes=$this->getSetting('cronTypes','Survey',$iSurvey,"");
-                        if($surveyCronTypes){
+                        if(!empty($surveyCronTypes) && !empty(json_decode($surveyCronTypes))){
                             $surveyCronTypes=json_decode($surveyCronTypes);
                         } else {
                             $surveyCronTypes=array();
@@ -455,10 +349,11 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                         $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} due to batch size",1);
                         continue;
                     }
-
+                    
                     Yii::app()->setConfig('surveyID',$iSurvey);
                     // Fill some information for this
                     $this->currentSurveyBatchSize=0;
+                    $this->setAttributeValue($iSurvey);
                     $this->sendEmails($iSurvey,'invite');
                     if($maxEmail < 2){
                         $this->sendMailCronLog("sendMailByCron reminder for {$iSurvey} deactivated",2);
@@ -489,16 +384,17 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         if(Yii::app()->getConfig("timeadjust",false)===false)
         {
             $oTimeAdjust=SettingGlobal::model()->find("stg_name=:stg_name",array(":stg_name"=>'timeadjust'));
-            if($oTimeAdjust)
+            if($oTimeAdjust) {
                 Yii::app()->setConfig("timeadjust",$oTimeAdjust->stg_value);
-            else
+            } else {
                 Yii::app()->setConfig("timeadjust",0);
+            }
         }
         return date($dformat, strtotime(Yii::app()->getConfig("timeadjust"), strtotime($date)));
     }
 
     /**
-     * Set wholme LimeSurvey config (not needed in new LS version)
+     * Set whole LimeSurvey config (not needed in new LS version)
      * @return void
      */
     private function _setConfigs()
@@ -557,6 +453,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             'error'=>0,
             'started'=>0,
             'notstarted'=>0,
+            'attributedisabled'=>0,
         );
         /* Get information */
         $bHtml = (getEmailFormat($iSurvey) == 'html');
@@ -564,12 +461,10 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         $aSurveyLangs = Survey::model()->findByPk($iSurvey)->additionalLanguages;
         $sBaseLanguage = Survey::model()->findByPk($iSurvey)->language;
         array_unshift($aSurveyLangs, $sBaseLanguage);
-        foreach($aSurveyLangs as $sSurveyLanguage)
-        {
+        foreach($aSurveyLangs as $sSurveyLanguage) {
             $aSurveys[$sSurveyLanguage] = getSurveyInfo($iSurvey, $sSurveyLanguage);
         }
-        foreach ($aSurveyLangs as $language)
-        {
+        foreach ($aSurveyLangs as $language) {
             $sSubject[$language]=preg_replace("/{TOKEN:([A-Z0-9_]+)}/","{"."$1"."}",$aSurveys[$language]["surveyls_email_{$sType}_subj"]);
             $sMessage[$language]=preg_replace("/{TOKEN:([A-Z0-9_]+)}/","{"."$1"."}",$aSurveys[$language]["surveyls_email_{$sType}"]);
             if ($bHtml)
@@ -585,33 +480,30 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         $dtToday=strtotime($dToday);
         $dFrom=$dToday;
         $maxReminder=$this->getSetting('maxEmail','survey',$iSurvey,"");
-        if($maxReminder===""){
+        if($maxReminder==="") {
             $maxReminder=$this->getSetting('maxEmail',null,null,$this->settings['maxEmail']['default']);
         }
         $maxReminder=intval($maxReminder);
         $maxReminder--;
-        if($sType=='invite' && $maxReminder < 0)
-        {
+        if($sType=='invite' && $maxReminder < 0) {
             $this->sendMailCronLog("Survey {$iSurvey}, {$sType} deactivated",2);
             return;
         }
-        if($sType=='remind' && $maxReminder < 1)
-        {
+        if($sType=='remind' && $maxReminder < 1) {
             $this->sendMailCronLog("Survey {$iSurvey}, {$sType} deactivated",2);
             return;
         }
         $delayInvitation=$this->getSetting('delayInvitation','survey',$iSurvey,"");
-        if($delayInvitation==""){
+        if($delayInvitation=="") {
             $delayInvitation=$this->getSetting('delayInvitation',null,null,$this->settings['delayInvitation']['default']);
         }
         $delayInvitation=intval($delayInvitation);
         $dayDelayReminder=$this->getSetting('delayReminder','survey',$iSurvey,"");
-        if($dayDelayReminder==""){
+        if($dayDelayReminder=="") {
             $dayDelayReminder=$this->getSetting('delayReminder',null,null,$this->settings['delayReminder']['default']);
         }
         $dayDelayReminder=intval($dayDelayReminder);
-        if($sType=='remind' && ($delayInvitation < 1|| $dayDelayReminder < 1))
-        {
+        if($sType=='remind' && ($delayInvitation < 1|| $dayDelayReminder < 1)) {
             $this->sendMailCronLog("Survey {$iSurvey}, {$sType} deactivated due to bad value in delays",0);
             return;
         }
@@ -624,8 +516,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         }
         //~ if($sType=='invite')
             //~ $dFrom=date("Y-m-d H:i",strtotime("-".intval($this->config['inviteafter'])." days",$dtToday));// valid is 3 day before and up
-        if($sType=='remind')
-        {
+        if($sType=='remind') {
             $dAfterSentRemind=date("Y-m-d H:i",strtotime("-".intval($dayDelayReminder)." days",$dtToday));// sent is X day before and up
             $dAfterSent=date("Y-m-d H:i",strtotime("-".intval($delayInvitation)." days",$dtToday));// sent is X day before and up
         }
@@ -678,8 +569,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         $oTokens=Token::model($iSurvey)->findAll($oCriteria);
         $aCountMail['total']=count($oTokens);
         $this->sendMailCronLog("Sending $sType",1);
-        foreach ($oTokens as $iToken)
-        {
+        foreach ($oTokens as $iToken) {
             /* Test actual sended */
             if($this->stopSendMailAction($aCountMail,$iSurvey,$sType)){
                 return;
@@ -698,7 +588,10 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                     $aCountMail['started']++;
                     continue;
                 }
-
+            }
+            if(!$this->allowSendMailByAttribute($oToken,$sType,$iSurvey)) {
+                $aCountMail['attributedisabled']++;
+                continue;
             }
             if ($this->getSetting('validateEmail',null,null,$this->settings['validateEmail']['default']) && !filter_var(trim($oToken->email), FILTER_VALIDATE_EMAIL)) {
                 $this->sendMailCronLog("invalid email : '{$oToken->email}' ({$oToken->tid}) for {$iSurvey}",2);
@@ -979,10 +872,163 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             $this->sendMailCronFinalLog($aCountMail);
             return true;
         }
-
         return false;
     }
 
+    /**
+     * Get the attribute for testing
+     * @param integer $surveyId
+     * @return array
+     *
+     */
+    public function getAttributesList($surveyId) {
+        $oSurvey=Survey::model()->findByPk($surveyId);
+        $aAvailableAttribute=array();
+        $aTokensAttribute=$oSurvey->getTokenAttributes();
+        foreach($aTokensAttribute as $key=>$aTokenAttribute) {
+            $aAvailableAttribute[$key]=empty($aTokenAttribute['description']) ? $key : $aTokenAttribute['description'];
+        }
+        if(Survey::model()->hasTokens($surveyId)) {
+            if(Survey::model()->hasTokens($surveyId)) {
+                $allAttributes=TokenDynamic::model($surveyId)->getCustom_attributes();
+                foreach($allAttributes as $key=>$value) {
+                    if(!array_key_exists($key,$aAvailableAttribute)) {
+                        $aAvailableAttribute[$key] = $key;
+                    }
+                }
+            }
+        }
+        return $aAvailableAttribute;
+    }
+    
+    /**
+     * Fill value for attribute token test
+     * @param \Token token to be tested
+     * @param string $sType
+     * @return void
+     *
+     */
+    public function setAttributeValue($surveyId) {
+        $allAttributes=TokenDynamic::model($surveyId)->getCustom_attributes();
+
+        $this->surveyMaxEmailAttributes = null;
+        $attributes=$this->get('maxEmailAttribute', 'Survey', $surveyId,null);
+        if(empty($attributes)) {
+            if(!empty($this->get('maxEmailAttribute'))) {
+                $attributes="attribute_".$this->get('maxEmailAttribute');
+            }
+        }
+        if(!empty($attributes) && $attributes!="none" && array_key_exists($attributes,$allAttributes)) {
+            $this->surveyMaxEmailAttributes = $attributes;
+        }
+
+        $this->surveyDelayInvitationAttribute = null;
+        $attributes=$this->get('delayInvitationAttribute', 'Survey', $surveyId,null);
+        if(empty($attributes)) {
+            if(!empty($this->get('delayInvitationAttribute'))) {
+                $attributes="attribute_".$this->get('delayInvitationAttribute');
+            }
+        }
+        if(!empty($attributes) && $attributes!="none" && array_key_exists($attributes,$allAttributes)) {
+            $this->surveyDelayInvitationAttribute = $attributes;
+        }
+
+        $this->surveyDelayReminderAttribute = null;
+        $attributes=$this->get('delayReminderAttribute', 'Survey', $surveyId,null);
+        if(empty($attributes)) {
+            if(!empty($this->get('delayReminderAttribute'))) {
+                $attributes="attribute_".$this->get('delayReminderAttribute');
+            }
+        }
+        if(!empty($attributes) && $attributes!="none" && array_key_exists($attributes,$allAttributes)) {
+            $this->surveyDelayReminderAttribute = $attributes;
+        }
+    }
+    
+    /**
+     * Test a token attributes for disable sending email
+     * @param \Token token to be tested
+     * @param string $sType
+     * @return boolean true if disable send mail 
+     */
+    public function allowSendMailByAttribute($oToken,$sType='invite',$iSurvey)
+    {
+        $sended=$oToken->remindercount + 1;
+        if($this->surveyMaxEmailAttributes) {
+            $attribute=$this->surveyMaxEmailAttributes;
+            $value = trim($oToken->$attribute);
+            if($value && !ctype_digit($value)) {
+                $this->sendMailCronLog("Max email by attribute {$attribute} (disabled): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",2);
+                return false;
+            }
+            if($value && ctype_digit($value)) {
+                if($value <= $sended ) {
+                    $this->sendMailCronLog("Max email by attribute {$attribute} (done): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",2);
+                    return false;
+                }
+            }
+        }
+        if($sType=='invite') {
+            return true;
+        }
+        $dateToday=dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i:s", Yii::app()->getConfig("timeadjust"));
+        $lastSend=$oToken->sent;
+        if($oToken->remindersent && $oToken->remindersent!="N") {
+            $lastSend=$oToken->remindersent;
+        }
+        $lastSend = new DateTime($lastSend);
+        $dateToday = new DateTime($dateToday);
+        $interval = $lastSend->diff($dateToday);
+        $dayDiff= $interval->days;
+        if($sended == 1 && $this->surveyDelayInvitationAttribute) {
+            $attribute=$this->surveyDelayInvitationAttribute;
+            $value = trim($oToken->$attribute);
+            if($value && !ctype_digit($value)) {
+                $this->sendMailCronLog("Delay after invitation by attribute {$attribute} (disabled): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",2);
+                return false;
+            }
+            if($value && ctype_digit($value)) {
+                $value=intval($value);
+                if($value > $dayDiff ) {
+                    $waiting= $value - $dayDiff;
+                    $this->sendMailCronLog("Delay after invitation by attribute {$attribute} (wait $waiting day(s)): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",2);
+                    return false;
+                }
+            }
+        }
+        if($sended > 1 && $this->surveyDelayReminderAttribute) {
+            $attribute=$this->surveyDelayReminderAttribute;
+            $value = trim($oToken->$attribute);
+            if($value && !ctype_digit($value)) {
+                $this->sendMailCronLog("Delay between reminders by attribute {$attribute} (disabled): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",2);
+                return false;
+            }
+            if($value && ctype_digit($value)) {
+                $value=intval($value);
+                if($value > $dayDiff ) {
+                    $waiting= $value - $dayDiff;
+                    $this->sendMailCronLog("Delay between reminders by attribute {$attribute} (wait $waiting day(s)): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",2);
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * get diff in days$
+     * @param string date YYYY-MM-DD Format for example
+     * @param string date YYYY-MM-DD Format for example
+     * @param string format
+     * @link http://php.net/manual/en/function.date-diff.php#115065
+     * @return integer
+     */
+    private function _getDateDiffDay($dateStart,$dateEnd , $differenceFormat = '%a' ) {
+        $dateStart = date_create($dateStart);
+        $dateEnd = date_create($dateEnd);
+        $interval = date_diff($dateStart, $dateEnd);
+        return $interval->format($differenceFormat);
+    }
     /**
      * Ending and return information according to sended after a send session
      * @param int[] $aCountMail array for email count
@@ -1005,12 +1051,284 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             if($aCountMail['notstarted']){
                 $this->sendMailCronLog("{$aCountMail['started']} not started survey",2);
             }
+            if($aCountMail['attributedisabled']){
+                $this->sendMailCronLog("{$aCountMail['attributedisabled']} disable by attribute",2);
+            }
             if($aCountMail['error']){
                 $this->sendMailCronLog("{$aCountMail['error']} messages with unknow error",1);
             }
         }
     }
 
+    /** Menu and settings part */
+    /**
+     * see beforeToolsMenuRender event
+     *
+     * @return void
+     */
+
+    public function beforeToolsMenuRender()
+    {
+        $event = $this->getEvent();
+        $surveyId = $event->get('surveyId');
+
+        $href = Yii::app()->createUrl(
+            'admin/pluginhelper',
+            array(
+                'sa' => 'sidebody',
+                'plugin' => get_class($this),
+                'method' => 'actionSettings',
+                'surveyId' => $surveyId
+            )
+        );
+
+        $menuItem = new \ls\menu\MenuItem(
+            array(
+                'label' => $this->_translate('Mail cron'),
+                'iconClass' => 'fa fa-envelope-square',
+                'href' => $href
+            )
+        );
+        $event->append('menuItems', array($menuItem));
+    }
+
+    /**
+     * Main function
+     * @param int $surveyId Survey id
+     *
+     * @return string
+     */
+    public function actionSettings($surveyId)
+    {
+        $oSurvey=Survey::model()->findByPk($surveyId);
+        if(!$oSurvey) {
+            throw new CHttpException(404,$this->translate("This survey does not seem to exist."));
+        }
+        if(!Permission::model()->hasSurveyPermission($surveyId,'surveysettings','update')){
+            throw new CHttpException(401);
+        }
+        if(App()->getRequest()->getPost('save'.get_class($this))) {
+            $this->set('maxEmail', App()->getRequest()->getPost('maxEmail'), 'Survey', $surveyId);
+            $this->set('delayInvitation', App()->getRequest()->getPost('delayInvitation'), 'Survey', $surveyId);
+            $this->set('delayReminder', App()->getRequest()->getPost('delayReminder'), 'Survey', $surveyId);
+            $this->set('maxSurveyBatchSize', App()->getRequest()->getPost('maxSurveyBatchSize'), 'Survey', $surveyId);
+            $this->set('maxSurveyBatchSize_invite', App()->getRequest()->getPost('maxSurveyBatchSize_invite'), 'Survey', $surveyId);
+            $this->set('maxSurveyBatchSize_remind', App()->getRequest()->getPost('maxSurveyBatchSize_remind'), 'Survey', $surveyId);
+            $this->set('dayOfWeekToSend', App()->getRequest()->getPost('dayOfWeekToSend'), 'Survey', $surveyId);
+            $this->set('cronTypes', App()->getRequest()->getPost('cronTypes'), 'Survey', $surveyId);
+            $this->set('maxEmailAttribute', App()->getRequest()->getPost('maxEmailAttribute'), 'Survey', $surveyId);
+            $this->set('delayInvitationAttribute', App()->getRequest()->getPost('delayInvitationAttribute'), 'Survey', $surveyId);
+            $this->set('delayReminderAttribute', App()->getRequest()->getPost('delayReminderAttribute'), 'Survey', $surveyId);
+            if(App()->getRequest()->getPost('save'.get_class($this)=='redirect')) {
+                Yii::app()->getController()->redirect(Yii::app()->getController()->createUrl('admin/survey',array('sa'=>'view','surveyid'=>$surveyId)));
+            }
+        }
+        /* get the default settings */
+        $defaultMaxEmail=$this->get('maxEmail', null,null,$this->settings['maxEmail']['default']);
+        if(!$defaultMaxEmail){
+            $defaultMaxEmail=$this->_translate("disabled");
+        }
+        $defaultDelayInvitation=$this->get('delayInvitation', null,null,$this->settings['delayInvitation']['default']);
+        $defaultDelayReminder=$this->get('delayReminder', null,null,$this->settings['delayReminder']['default']);
+        $defaultDelayInvitationAttribute=$this->get('delayInvitationAttribute', null,null,$this->settings['delayInvitationAttribute']['default']);
+        $defaultDelayReminderAttribute=$this->get('delayReminderAttribute', null,null,$this->settings['delayReminderAttribute']['default']);
+
+        $maxBatchSize=$this->get('maxBatchSize', null,null,$this->settings['maxBatchSize']['default']);
+        if(!$maxBatchSize){
+            $maxBatchHelp=$this->_translate("Leave empty to send all available emails.");
+        }else{
+            $maxBatchHelp=sprintf($this->_translate("Leave empty to send all available emails,only limited by global batch size (%s) for all surveys."),$maxBatchSize);
+        }
+
+        $aData=array();
+        /* An alert if survey don't have token */
+        $aData['warningString'] = !Survey::model()->hasTokens($surveyId) ? "This survey didn't have token currently, this settings are not used until participant are not activated." : null;
+
+        $aSettings=array();
+        
+        $aSettings[$this->_translate('Basic settings')]=array(
+            'maxEmail' => array(
+                'type'=>'int',
+                'htmlOptions'=>array(
+                    'min'=>0,
+                ),
+                'label'=>$this->_translate("Max email to send (invitation + remind) to each participant."),
+                'help'=>sprintf($this->_translate("0 to deactivate sending of email, empty to use default (%s)"),$defaultMaxEmail),
+                'current'=>$this->get('maxEmail', 'Survey', $surveyId,""),
+            ),
+            'delayInvitation' => array(
+                'type'=>'int',
+                'htmlOptions'=>array(
+                    'min'=>1,
+                ),
+                'label'=>$this->_translate("Min delay between invitation and first reminder."),
+                'help'=>sprintf($this->_translate("In days, empty for default (%s)"),$defaultDelayInvitation),
+                'current'=>$this->get('delayInvitation', 'Survey', $surveyId,""),
+            ),
+            'delayReminder' => array(
+                'type'=>'int',
+                'htmlOptions'=>array(
+                    'min'=>1,
+                ),
+                'label'=>$this->_translate("Min delay between reminders."),
+                'help'=>sprintf($this->_translate("In days, empty for default (%s)"),$defaultDelayReminder),
+                'current'=>$this->get('delayReminder', 'Survey', $surveyId,""),
+            ),
+        );
+        $aSettings[$this->_translate('Batch size')]=array(
+            'maxSurveyBatchSize'=>array(
+                'type'=>'int',
+                'htmlOptions'=>array(
+                    'min'=>1,
+                ),
+                'label'=>$this->_translate("Max email to send (invitation + remind) in one batch for this survey."),
+                'help'=>$maxBatchHelp,
+                'current'=>$this->get('maxSurveyBatchSize', 'Survey', $surveyId,""),
+            ),
+            'maxSurveyBatchSize_invite'=>array(
+                'type'=>'int',
+                'htmlOptions'=>array(
+                    'min'=>0,
+                ),
+                'label'=>$this->_translate("Max email to send for invitation in one batch for this survey."),
+                'help'=>$this->_translate("The max email setting can not be exceeded."),
+                'current'=>$this->get('maxSurveyBatchSize_invite', 'Survey', $surveyId,""),
+            ),
+            'maxSurveyBatchSize_remind'=>array(
+                'type'=>'int',
+                'htmlOptions'=>array(
+                    'min'=>0,
+                ),
+                'label'=>$this->_translate("Max email to send for reminder in one batch for this survey."),
+                'help'=>$this->_translate("The max email setting can not be exceeded. Reminders are sent after invitation."),
+                'current'=>$this->get('maxSurveyBatchSize_remind', 'Survey', $surveyId,""),
+            ),
+        );
+        $whenSettings=array(
+            'dayOfWeekToSend'=>array(
+                'type'=>'select',
+                'htmlOptions'=>array(
+                    'multiple'=>'multiple',
+                    'empty'=>$this->_translate("All week days"),
+                ),
+                'selectOptions'=>array(
+                    'placeholder' =>$this->_translate("All week days"),
+                    'allowClear'=> true,
+                    'width'=>'100%',
+                ),
+                'controlOptions'=>array(
+                    'class'=>'search-100',
+                ),
+                'label'=>$this->_translate("Day of week for sending email"),
+                'options'=>array(
+                    1=>$this->_translate("Monday"),
+                    2=>$this->_translate("Thursday"),
+                    3=>$this->_translate("Wednesday"),
+                    4=>$this->_translate("Thuesday"),
+                    5=>$this->_translate("Friday"),
+                    6=>$this->_translate("Saturday"),
+                    7=>$this->_translate("Sunday"),
+                ),
+                'current'=>$this->get('dayOfWeekToSend', 'Survey', $surveyId,array()),
+            ),
+        );
+        if($this->get('cronTypes', null, null)){
+            $availCronTypes=$this->get('cronTypes',null,null,$this->settings['cronTypes']['default']);
+            $availCronTypes=explode('|', $availCronTypes);
+            $cronTypesOtions=array();
+            foreach($availCronTypes as $cronType){
+                $cronTypesOtions[$cronType]=$cronType;
+            }
+            if(!empty($cronTypesOtions)) {
+                $emptyLabel=$this->get('cronTypeNone',null,null,$this->settings['cronTypeNone']['default']) ? $this->_translate("Only if no moment is set") : $this->_translate("At all moment");
+                $whenSettings['cronTypes']=array(
+                    'type'=>'select',
+                    'htmlOptions'=>array(
+                        'multiple'=>'multiple',
+                        'empty'=>$emptyLabel,
+                    ),
+                    'selectOptions'=>array(
+                        'placeholder' =>$emptyLabel,
+                        'allowClear'=> true,
+                        'width'=>'100%',
+                    ),
+                    'controlOptions'=>array(
+                        'class'=>'search-100',
+                    ),
+                    'label'=>$this->_translate("Moment for emailing"),
+                    'options'=>$cronTypesOtions,
+                    'current'=>$this->get('cronTypes', 'Survey', $surveyId,array()),
+                );
+            }
+        }
+        $aSettings[$this->_translate('When email must be sent')]=$whenSettings;
+
+        /* Get available attributes for options */
+        $aAvailableAttribute=$this->getAttributesList($surveyId);
+        $aAvailableAttribute['none'] = $this->_translate("None");
+
+        $defaultMax=$this->_translate("None");
+        if(!empty($this->get('maxEmailAttribute'))) {
+            if(array_key_exists("attribute_".$this->get('maxEmailAttribute'),$aAvailableAttribute)) {
+                $defaultMax=$aAvailableAttribute["attribute_".$this->get('maxEmailAttribute')];
+            } else {
+                $defaultMax = sprintf($this->_translate("None - %s"),"attribute_".$this->get('maxEmailAttribute'));
+            }
+        }
+        $defaultInvitation=$this->_translate("None");
+        if(!empty($this->get('delayInvitationAttribute'))) {
+            if(array_key_exists("attribute_".$this->get('delayInvitationAttribute'),$aAvailableAttribute)) {
+                $defaultInvitation=$aAvailableAttribute["attribute_".$this->get('delayInvitationAttribute')];
+            } else {
+                $defaultInvitation = sprintf($this->_translate("None - %s"),"attribute_".$this->get('delayInvitationAttribute'));
+            }
+        }
+        $defaultReminder=$this->_translate("None");
+        if(!empty($this->get('delayReminderAttribute'))) {
+            if(array_key_exists("attribute_".$this->get('delayReminderAttribute'),$aAvailableAttribute)) {
+                $defaultReminder=$aAvailableAttribute["attribute_".$this->get('delayReminderAttribute')];
+            } else {
+                $defaultReminder = sprintf($this->_translate("None - %s"),"attribute_".$this->get('delayReminderAttribute'));
+            }
+        }
+        $tokenAttributeSettings=array(
+            'maxEmailAttribute'=>array(
+                'type'=>'select',
+                'htmlOptions'=>array(
+                    'empty'=>sprintf($this->_translate("Leave default (%s)"),$defaultMax),
+                ),
+                'label'=>$this->_translate("Attribute used for maximum number of emails."),
+                'options'=>$aAvailableAttribute,
+                'current'=>$this->get('maxEmailAttribute', 'Survey', $surveyId,null),
+            ),
+            'delayInvitationAttribute'=>array(
+                'type'=>'select',
+                'htmlOptions'=>array(
+                    'empty'=>sprintf($this->_translate("Leave default (%s)"),$defaultInvitation),
+                ),
+                'label'=>$this->_translate("Attribute used for min delay between inviation and 1st reminder."),
+                'options'=>$aAvailableAttribute,
+                'current'=>$this->get('delayInvitationAttribute', 'Survey', $surveyId,null),
+            ),
+            'delayReminderAttribute'=>array(
+                'type'=>'select',
+                'htmlOptions'=>array(
+                    'empty'=>sprintf($this->_translate("Leave default (%s)"),$defaultReminder),
+                ),
+                'label'=>$this->_translate("Attribute used for min delay between each reminders."),
+                'options'=>$aAvailableAttribute,
+                'current'=>$this->get('delayReminderAttribute', 'Survey', $surveyId,null),
+            ),
+        );
+        $aSettings[$this->_translate('Token attribute usage')]=$tokenAttributeSettings;
+
+        $aData['pluginClass']=get_class($this);
+        $aData['surveyId']=$surveyId;
+        $aData['aSettings']=$aSettings;
+        $aData['assetUrl']=Yii::app()->assetManager->publish(dirname(__FILE__) . '/assets/');
+        $content = $this->renderPartial('settings', $aData, true);
+        return $content;
+    }
     /**
      * Fix LimeSurvey command function
      * @todo : find way to control API
