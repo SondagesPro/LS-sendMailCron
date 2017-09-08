@@ -26,9 +26,27 @@ Allow to send token email (invite or reminder) via PHP cli . This allow to use c
   - Same and more in each surveys setting
   - If plugin validate the email (this allow only one email by token)
   - The cron type list to be allowed in survey settings
-- To test the plugin you need to call it via PHP Cli `php yourlimesurveydir/application/commands/console.php plugin cron --interval=1 sendMailCronSimulate=1`
+- To test the plugin you need to call it via PHP Cli `php yourlimesurveydir/application/commands/console.php plugin cron sendMailCronSimulate=1`
 - This line can be added in your crontab or Task Scheduler
 - Per survey settings are found on Tools menu
+
+### Usage of moment
+
+In global plugin settings, admlin user can add a list of moment for sending email. This moment can be choose by survey administrator in the survey settings of the plugins.
+
+A good solution is to use clear name for moment, for example `morning`, `weekend` with corresponding cron command. The moment are added in the command with `sendMailCronType=` : `php yourlimesurveydir/application/commands/console.php plugin cron sendMailCronType=morning`
+
+### Usage of attribute
+
+You can use token attribute for date/time, number and delay for sending email. Plugion global settings let admin user choose defaut attribute number, and you can update or set it in survey plugin settings.
+
+The token is tested just before send email, then it mus be selected before by the survey settings. For each test we have:
+- If the attribute didn't exist or is empty : send the email
+- If the attribute is not an integer : don't send the email (warning 01 is not an integer).
+- If the attribute is an integer : test is done.
+
+Maximm email is tested including the invitation. Then if you set 1 to the attribute : only the invitation was sent. With 0 : even invitation was not sent.
+For the delay : compare is done including the time, then it can take one day more if you send a lot of email.
 
 ### Params
 

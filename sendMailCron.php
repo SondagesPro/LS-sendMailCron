@@ -961,8 +961,8 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                 $this->sendMailCronLog("Max email by attribute {$attribute} (disabled): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",2);
                 return false;
             }
-            if($value && ctype_digit($value)) {
-                if($value <= $sended ) {
+            if(strval(intval($value))==strval($value)) {
+                if(intval($value) <= $sended ) {
                     $this->sendMailCronLog("Max email by attribute {$attribute} (done): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",2);
                     return false;
                 }
@@ -987,7 +987,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                 $this->sendMailCronLog("Delay after invitation by attribute {$attribute} (disabled): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",2);
                 return false;
             }
-            if($value && ctype_digit($value)) {
+            if(strval(intval($value))==strval($value)) {
                 $value=intval($value);
                 if($value > $dayDiff ) {
                     $waiting= $value - $dayDiff;
@@ -1003,7 +1003,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                 $this->sendMailCronLog("Delay between reminders by attribute {$attribute} (disabled): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",2);
                 return false;
             }
-            if($value && ctype_digit($value)) {
+            if(strval(intval($value))==strval($value)) {
                 $value=intval($value);
                 if($value > $dayDiff ) {
                     $waiting= $value - $dayDiff;
