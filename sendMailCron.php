@@ -8,7 +8,7 @@
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> for initial version
  * @copyright 2016-2017 Extract Recherche Marketing for cronTypes and BatchSize
  * @license AGPL v3
- * @version 2.1.0
+ * @version 2.1.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -853,6 +853,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         if( $maxThisType!=='' && $aCountMail['sent'] >= $maxThisType){
             $stillToSend=$aCountMail['total']*2-array_sum($aCountMail);
             $this->sendMailCronLog("Survey {$iSurvey}, {$sType} survey batch size achieved. {$stillToSend} email to send at next batch.",1);
+            $this->sendMailCronFinalLog($aCountMail);
             return true;
         }
 
