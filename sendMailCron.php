@@ -28,7 +28,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
     static protected $name = 'sendMailCron';
 
     /**
-     * @var int debug (for echoing on terminal) 0=>ERROR,1=>INFO, 2=>DEBUG
+     * @var int debug (for echoing on terminal) 0=>ERROR, 1=>WARNING+BASICINFORMATION, 2=>INFO, 3=>DEBUG/TRACE
      */
     private $debug= 1;
     /**
@@ -195,13 +195,12 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         {
             $cronTypes = preg_split('/\r\n|\r|\n|,|;/', $settings['cronTypes']);
             $cronTypes = array_map(
-                    function($cronType) { return preg_replace("/[^0-9a-zA-Z]/i", '', $cronType); },
-                    $cronTypes
+                function($cronType) { return preg_replace("/[^0-9a-zA-Z]/i", '', $cronType); },
+                $cronTypes
             );
             $cronTypes = array_filter($cronTypes);
             $settings['cronTypes']=implode( "|",$cronTypes);
         }
-
         parent::saveSettings($settings);
     }
     /**
@@ -213,8 +212,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         $event = $this->getEvent();
         if(is_null($this->getSetting('hostInfo')))
         {
-            if(Yii::app() instanceof CConsoleApplication)
-            {
+            if(Yii::app() instanceof CConsoleApplication) {
                 $event->set('success', false);
                 $event->set('message', 'This plugin need to be configurated before activate.');
                 return;
@@ -312,7 +310,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                     }
                     $todayNum=(string)self::_dateShifted(date("Y-m-d H:i:s"),"N");
                     if(!empty($aDayOfWeekToSend) && !in_array($todayNum,$aDayOfWeekToSend)){
-                        $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} for today",1);
+                        $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} for today",2);
                         continue;
                     }
                     /* By cron type */
@@ -333,18 +331,18 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                         $surveyCronTypes=array_intersect($surveyCronTypes,$availCronTypes);
                         if($this->cronType){
                             if(!in_array($this->cronType,$surveyCronTypes)){
-                                $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} for this cron type ({$this->cronType})",1);
+                                $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} for this cron type ({$this->cronType})",2);
                                 continue;
                             }
                         } else {
                             if(!empty($surveyCronTypes)){
-                                $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} for no cron type",1);
+                                $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} for no cron type",2);
                                 continue;
                             }
                         }
 
                     }
-                    $this->sendMailCronLog("sendMailByCron for {$iSurvey}",1);
+                    $this->sendMailCronLog("Start sendMailByCron for {$iSurvey}",1);
                     if($maxBatchSize && $maxBatchSize<=$this->currentBatchSize){
                         $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} due to batch size",1);
                         continue;
@@ -438,7 +436,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
     }
 
     /**
-     * Send eamis for a survey and a type
+     * Send emails for a survey and a type
      * @param int $iSurvey
      * @param string $sType
      * @return void
@@ -504,7 +502,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         }
         $dayDelayReminder=intval($dayDelayReminder);
         if($sType=='remind' && ($delayInvitation < 1|| $dayDelayReminder < 1)) {
-            $this->sendMailCronLog("Survey {$iSurvey}, {$sType} deactivated due to bad value in delays",0);
+            $this->sendMailCronLog("Survey {$iSurvey}, {$sType} deactivated due to bad value in delays",1);
             return;
         }
         $isNotAnonymous=$oSurvey->anonymized!="Y";
@@ -568,7 +566,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         // Find all token
         $oTokens=Token::model($iSurvey)->findAll($oCriteria);
         $aCountMail['total']=count($oTokens);
-        $this->sendMailCronLog("Sending $sType",1);
+        $this->sendMailCronLog("Start sending $sType",2);
         foreach ($oTokens as $iToken) {
             /* Test actual sended */
             if($this->stopSendMailAction($aCountMail,$iSurvey,$sType)){
@@ -708,15 +706,14 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                         $this->sendMailCronLog("Email {$oToken->email} : $txtLog",3);
                     } else {
                         $error=CVarDumper::dumpAsString($oToken->getErrors(), 3, false);
-                        $this->sendMailCronLog("Email {$oToken->email} error: $error");
+                        $this->sendMailCronLog("Email {$oToken->email} error: $error",1);
                     }
                 }
             }else{
-                $sTo=implode(";",$aTo);
                 if($maildebug){
-                    $this->sendMailCronLog("Unknow error when send email to {$oToken->email} ({$iSurvey}) : ".$maildebug);
+                    $this->sendMailCronLog("Unknow error when send email to {$oToken->email} ({$iSurvey}) : ".$maildebug,0);
                 }else{
-                    $this->sendMailCronLog("Unknow error when send email to {$oToken->email} ({$iSurvey})");
+                    $this->sendMailCronLog("Unknow error when send email to {$oToken->email} ({$iSurvey})",0);
                 }
                 $aCountMail['error']++;
             }
@@ -833,7 +830,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                 $availCronTypes=$this->getSetting('cronTypes',null,null,"");
                 $availCronTypes=explode('|', $availCronTypes);
                 if($cronType && !in_array($cronType,$availCronTypes)){
-                    $this->sendMailCronLog("invalid cronType : $cronType, plugin is disable",0);
+                    $this->sendMailCronLog("invalid cronType : $cronType, plugin is disable",1);
                     $this->disable=true;
                 } else {
                     $this->cronType=$cronType;
@@ -958,12 +955,12 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             $attribute=$this->surveyMaxEmailAttributes;
             $value = trim($oToken->$attribute);
             if($value && !ctype_digit($value)) {
-                $this->sendMailCronLog("Max email by attribute {$attribute} (disabled): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",2);
+                $this->sendMailCronLog("Max email by attribute {$attribute} (disabled): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",3);
                 return false;
             }
             if(strval(intval($value))==strval($value)) {
                 if(intval($value) <= $sended ) {
-                    $this->sendMailCronLog("Max email by attribute {$attribute} (done): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",2);
+                    $this->sendMailCronLog("Max email by attribute {$attribute} (done): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",3);
                     return false;
                 }
             }
@@ -984,14 +981,14 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             $attribute=$this->surveyDelayInvitationAttribute;
             $value = trim($oToken->$attribute);
             if($value && !ctype_digit($value)) {
-                $this->sendMailCronLog("Delay after invitation by attribute {$attribute} (disabled): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",2);
+                $this->sendMailCronLog("Delay after invitation by attribute {$attribute} (disabled): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",3);
                 return false;
             }
             if(strval(intval($value))==strval($value)) {
                 $value=intval($value);
                 if($value > $dayDiff ) {
                     $waiting= $value - $dayDiff;
-                    $this->sendMailCronLog("Delay after invitation by attribute {$attribute} (wait $waiting day(s)): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",2);
+                    $this->sendMailCronLog("Delay after invitation by attribute {$attribute} (wait $waiting day(s)): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",3);
                     return false;
                 }
             }
@@ -1000,14 +997,14 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             $attribute=$this->surveyDelayReminderAttribute;
             $value = trim($oToken->$attribute);
             if($value && !ctype_digit($value)) {
-                $this->sendMailCronLog("Delay between reminders by attribute {$attribute} (disabled): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",2);
+                $this->sendMailCronLog("Delay between reminders by attribute {$attribute} (disabled): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",3);
                 return false;
             }
             if(strval(intval($value))==strval($value)) {
                 $value=intval($value);
                 if($value > $dayDiff ) {
                     $waiting= $value - $dayDiff;
-                    $this->sendMailCronLog("Delay between reminders by attribute {$attribute} (wait $waiting day(s)): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",2);
+                    $this->sendMailCronLog("Delay between reminders by attribute {$attribute} (wait $waiting day(s)): {$oToken->email} ({$oToken->$attribute}) for {$iSurvey}",3);
                     return false;
                 }
             }
@@ -1046,16 +1043,16 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                 $this->sendMailCronLog("{$aCountMail['invalid']} invalid email address",1);
             }
             if($aCountMail['started']){
-                $this->sendMailCronLog("{$aCountMail['started']} already started survey",2);
+                $this->sendMailCronLog("{$aCountMail['started']} already started survey",1);
             }
             if($aCountMail['notstarted']){
-                $this->sendMailCronLog("{$aCountMail['started']} not started survey",2);
+                $this->sendMailCronLog("{$aCountMail['started']} not started survey",1);
             }
             if($aCountMail['attributedisabled']){
-                $this->sendMailCronLog("{$aCountMail['attributedisabled']} disable by attribute",2);
+                $this->sendMailCronLog("{$aCountMail['attributedisabled']} disable by attribute",1);
             }
             if($aCountMail['error']){
-                $this->sendMailCronLog("{$aCountMail['error']} messages with unknow error",1);
+                $this->sendMailCronLog("{$aCountMail['error']} messages with error",1);
             }
         }
     }

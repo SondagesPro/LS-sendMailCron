@@ -8,6 +8,7 @@ Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSur
 
 - Add restriction by attribute
 - Move settings to dedicated page (break 2.6 compatibility)
+- More log control
 
 ## [1.1.0] - 2017-06-15
 

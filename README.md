@@ -64,8 +64,12 @@ Some example
 
 ### Logging
 Plugin use 2 system for logging :
-- echo at console what happen : then you can use cron system to send an email, or test the plugin : error and info was echoed
-- use [Yii::log](http://www.yiiframework.com/doc/guide/1.1/en/topics.logging) : 3 state : error, info and trace. Loggued as application.plugins.sendMailCron
+- echo at console what happen : then you can use cron system to send an email, or test the plugin : error and info was echoed. Use `sendMailCronDebug` to choose what you want : the 4 states was
+  - 0 (error): only error are shown
+  - 1 (base information): show warning and basic information (number of email sent, batch size done …)
+  - 2 (information) : shown more information (deactivated survey, day deactivated …)
+  - 3 (debug/trace) : request done, all individual email information
+- use [Yii::log](http://www.yiiframework.com/doc/guide/1.1/en/topics.logging) : 4 state : error, info and trace. Loggued as application.plugins.sendMailCron.
   - The log file is, by default ./tmp/runtime/application.log or ./application/runtime/application.log before LimeSurvey version 2.57.2
   - To have more information on mail error : you must enable 'SMTP debug mode' in LimeSurvey instance global settings
 
