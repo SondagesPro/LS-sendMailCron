@@ -8,7 +8,7 @@
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> for initial version
  * @copyright 2016-2017 Extract Recherche Marketing for cronTypes and BatchSize
  * @license AGPL v3
- * @version 2.1.1
+ * @version 2.2.0
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -68,6 +68,20 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             'type' => 'info',
             'content' => 'You need activate cron system in the server : <code>php yourlimesurveydir/application/commands/console.php plugin cron --interval=1</code>. This plugin don\'t use interval, all email of all surveys are tested when cron happen.',
         ),
+        //~ 'information' => array(
+            //~ 'type' => 'info',
+            //~ 'content' => '<div class="well"><p>You need activate cron system in the server : <code>php yourlimesurveydir/application/commands/console.php plugin cron --interval=1</code>. This plugin don\'t use interval, all email of all surveys are tested when cron happen.</p><p>Alternatively, you can use direct event <code>php yourlimesurveydir/application/commands/console.php plugin --target=sendMailCron</code>. In this case, best is to deactivate it in cron event.</div>',
+        //~ ),
+        //~ 'enableInCron' => array(
+            //~ 'type'=>'checkbox',
+            //~ 'value'=>1,
+            //~ 'htmlOption'=>array(
+                //~ 'uncheckValue'=>0
+            //~ ),
+            //~ 'label'=>"Enable in cron event.",
+            //~ 'help'=>"Enable sendMailCron in cron event, you can use direct event for sending email.",
+            //~ 'default'=>1,
+        //~ ),
         'maxBatchSize' => array(
             'type'=>'int',
             'htmlOptions'=>array(
@@ -257,26 +271,48 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
     }
 
     /**
-     * The action of sending cron when needed
+     * The action in direct event
      * @return void
      */
-    public function sendMailByCron()
-    {
+    public function sendMailByCli() {
+        if($this->event->get("target") != get_class()) {
+            return;
+        }
         $this->_LsCommandFix();
         $this->_setConfigs();
         $this->setArgs();
-        if($this->disable){
-            return;
+        /* @todo replace by option (in json array ?) */
+    }
+
+    /**
+     * The action in cron event
+     * @return void
+     */
+    public function sendMailByCron() {
+        if($this->get('enableInCron',null,null,1) ) {
+            $this->_LsCommandFix();
+            $this->_setConfigs();
+            $this->setArgs();
+            if(!$this->disable) {
+                $this->sendTokenMessages();
+            }
         }
+    }
+    /**
+     * The action of sending token emails for all survey
+     * @return void
+     */
+    public function sendTokenMessages()
+    {
         $maxBatchSize=$this->getSetting('maxBatchSize',null,null,'');
 
         $oSurveys=Survey::model()->findAll(
             "active = 'Y' AND (startdate <= :now1 OR startdate IS NULL) AND (expires >= :now2 OR expires IS NULL)",
-                array(
-                    ':now1' => self::_dateShifted(date("Y-m-d H:i:s")),
-                    ':now2' => self::_dateShifted(date("Y-m-d H:i:s"))
-                )
-            );
+            array(
+                ':now1' => self::_dateShifted(date("Y-m-d H:i:s")),
+                ':now2' => self::_dateShifted(date("Y-m-d H:i:s"))
+            )
+        );
         // Unsure we need whole ... to be fixed
         Yii::import('application.helpers.common_helper', true);
         Yii::import('application.helpers.surveytranslator_helper', true);
@@ -468,6 +504,29 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             if ($bHtml)
                 $sMessage[$language] = html_entity_decode($sMessage[$language], ENT_QUOTES, Yii::app()->getConfig("emailcharset"));
         }
+        /* Get the attchements */
+        switch($sType) {
+            case 'invite':
+                $attachementTemplate = 'invitation';
+                break;
+            case 'remind':
+                $attachementTemplate = 'reminder';
+                break;
+            default:
+                $attachementTemplate = null;
+        }
+        $aAttachments = array();
+        foreach ($aSurveyLangs as $language) {
+            $aLangAttachments = array();
+            if (isset($aSurveys[$sSurveyLanguage]['attachments'])) {
+                $aCurrentAttachments = unserialize($aSurveys[$sSurveyLanguage]['attachments']);
+                //$aLangAttachments = array();
+                if(isset($aCurrentAttachments[$attachementTemplate]) && is_array($aCurrentAttachments[$attachementTemplate])) {
+                    $aLangAttachments[$language] = $aCurrentAttachments[$attachementTemplate];
+                }
+            }
+        }
+
         $dToday=dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i:s", Yii::app()->getConfig("timeadjust"));
         $dYesterday=dateShift(date("Y-m-d H:i:s", time() - 86400), "Y-m-d H:i:s", Yii::app()->getConfig("timeadjust"));
         $dTomorrow=dateShift(date("Y-m-d H:i:s", time() + 86400), "Y-m-d H:i:s", Yii::app()->getConfig("timeadjust"));
@@ -607,8 +666,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             }
             $this->sendMailCronLog("Send : {$oToken->email} ({$oToken->tid}) for {$iSurvey}",3);
             $sLanguage = trim($oToken->language);
-            if (!in_array($sLanguage,$aSurveyLangs))
-            {
+            if (!in_array($sLanguage,$aSurveyLangs)) {
                 $sLanguage = $sBaseLanguage;
             }
 
@@ -636,13 +694,12 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             $aUrlsArray["OPTOUTURL"] = App()->createAbsoluteUrl("/optout/tokens",array('langcode'=>$sLanguage,'surveyid'=>$iSurvey,'token'=>$sToken));
             $aUrlsArray["OPTINURL"] = App()->createAbsoluteUrl("/optin/tokens",array('langcode'=>$sLanguage,'surveyid'=>$iSurvey,'token'=>$sToken));
             $aUrlsArray["SURVEYURL"] = App()->createAbsoluteUrl("/survey/index",array('sid'=>$iSurvey,'token'=>$sToken,'lang'=>$sLanguage));
-            foreach($aUrlsArray as $key=>$url)
-            {
-                if ($bHtml)
+            foreach($aUrlsArray as $key=>$url) {
+                if ($bHtml) {
                     $aFieldsArray["{{$key}}"] = "<a href='{$url}'>" . htmlspecialchars($url) . '</a>';
-                else
+                } else {
                     $aFieldsArray["{{$key}}"] = $url;
-
+                }
             }
 
             $aCustomHeaders = array(
@@ -658,6 +715,17 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             if($this->simulate){
                 $success=true;
             }else{
+                /* Evaluate attachement */
+                $aRelevantAttachments = array();
+                if(!empty($aLangAttachments[$sLanguage])) {
+                    LimeExpressionManager::singleton()->loadTokenInformation($iSurvey, $sToken);
+                    foreach ($aLangAttachments[$sLanguage] as $aAttachment) {
+                        if (LimeExpressionManager::singleton()->ProcessRelevance($aAttachment['relevance'])) {
+                            $aRelevantAttachments[] = $aAttachment['url'];
+                        }
+                    }
+                }
+                
                 /* Add the event 'beforeSendEmail */
                 $beforeTokenEmailEvent = new PluginEvent('beforeTokenEmail');
                 $beforeTokenEmailEvent->set('survey', $iSurvey);
@@ -677,14 +745,11 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                 $sBounce = $beforeTokenEmailEvent->get('bounce');
                 /* send the email */
                 global $maildebug;
-                if ($beforeTokenEmailEvent->get('send', true) == false)
-                {
+                if ($beforeTokenEmailEvent->get('send', true) == false) {
                     $maildebug = $beforeTokenEmailEvent->get('error', $maildebug);
                     $success = $beforeTokenEmailEvent->get('error') == null;
-                }
-                else
-                {
-                    $success = SendEmailMessage($message, $subject, $aTo, $sFrom, Yii::app()->getConfig("sitename"), $bHtml, $sBounce, array(), $aCustomHeaders);
+                } else {
+                    $success = SendEmailMessage($message, $subject, $aTo, $sFrom, Yii::app()->getConfig("sitename"), $bHtml, $sBounce, $aRelevantAttachments, $aCustomHeaders);
                 }
             }
             /* action if email is sent */
@@ -709,10 +774,10 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                         $this->sendMailCronLog("Email {$oToken->email} error: $error",1);
                     }
                 }
-            }else{
-                if($maildebug){
+            } else {
+                if($maildebug) {
                     $this->sendMailCronLog("Unknow error when send email to {$oToken->email} ({$iSurvey}) : ".$maildebug,0);
-                }else{
+                } else {
                     $this->sendMailCronLog("Unknow error when send email to {$oToken->email} ({$iSurvey})",0);
                 }
                 $aCountMail['error']++;
