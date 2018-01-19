@@ -91,6 +91,12 @@ Plugin use 2 system for logging :
       ),
   ````
 
+### Events
+
+The plugin dispatch two custom events.
+- When the cron finished to sent emails for a survey of a specific type (invite / reminder) `finishSendEmailsForSurveyTypeCron`
+- When the cron finished to sent emails for a survey `finishSendEmailForSurveyCron`
+
 ## Contribute
 
 Issue and merge request are welcome on [framagit](https://framagit.org/SondagePro-LimeSurvey-plugin/sendMailCron) or [github](https://github.com/SondagesPro/LS-sendMailCron/).

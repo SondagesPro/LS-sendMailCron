@@ -1,0 +1,15 @@
+{
+    "name": "SondagesPro/sendMailCron",
+    "description": "Allow to send token email (invite or reminder) via PHP cli . This allow to use crontab or Scheduled task to send email.",
+    "type": "limesurvey-plugin",
+    "homepage": "https://github.com/SondagesPro/LS-sendMailCron",
+    "license": "AGPL-3.0+",
+    "authors": [
+        {
+            "name": "Denis Chenu",
+            "email": "contact@sondages.pro"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {}
+}
