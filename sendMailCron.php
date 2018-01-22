@@ -8,7 +8,7 @@
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> for initial version
  * @copyright 2016-2017 Extract Recherche Marketing for cronTypes and BatchSize
  * @license AGPL v3
- * @version 2.2.0
+ * @version 2.3.0
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -383,7 +383,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                         $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} due to batch size",1);
                         continue;
                     }
-                    
+
                     Yii::app()->setConfig('surveyID',$iSurvey);
                     // Fill some information for this
                     $this->currentSurveyBatchSize=0;
@@ -391,9 +391,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                     $this->sendEmails($iSurvey,'invite');
                     if($maxEmail < 2){
                         $this->sendMailCronLog("sendMailByCron reminder for {$iSurvey} deactivated",2);
-                        continue;
-                    }
-                    if(!$maxBatchSize || $maxBatchSize>=$this->currentBatchSize){
+                    } else if(!$maxBatchSize || $maxBatchSize>=$this->currentBatchSize){
                         if(!$this->getSetting('maxSurveyBatchSize','Survey', $iSurvey) || $this->getSetting('maxSurveyBatchSize','Survey', $iSurvey)>=$this->currentBatchSize){
                             $this->sendEmails($iSurvey,'remind');
                         }else{
@@ -402,6 +400,10 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                     }else{
                         $this->sendMailCronLog("sendMailByCron reminder deactivated for {$iSurvey} due to batch size",1);
                     }
+
+                    $event = new PluginEvent('finishSendEmailForSurveyCron');
+                    $event->set('survey_id', $iSurvey);
+                    App()->getPluginManager()->dispatchEvent($event);
                 }
             }
         }
@@ -469,6 +471,24 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                 Yii::app()->setConfig($oSetting->getAttribute('stg_name'), $oSetting->getAttribute('stg_value'));
             }
         }
+    }
+
+    /**
+     * Dispatch event after email sent and final log
+     * @param int[] $aCountMail array for email count
+     * @param int $iSurvey
+     * @param string $sType
+     * @return void
+     */
+    private function afterSendEmail($aCountMail, $iSurvey, $sType)
+    {
+        $event = new PluginEvent('finishSendEmailsForSurveyTypeCron');
+        $event->set('info', $aCountMail);
+        $event->set('type', $sType);
+        $event->set('survey_id', $iSurvey);
+        App()->getPluginManager()->dispatchEvent($event);
+
+        $this->sendMailCronFinalLog($aCountMail);
     }
 
     /**
@@ -629,6 +649,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         foreach ($oTokens as $iToken) {
             /* Test actual sended */
             if($this->stopSendMailAction($aCountMail,$iSurvey,$sType)){
+                $this->afterSendEmail($aCountMail, $iSurvey, $sType);
                 return;
             }
             $oToken=Token::model($iSurvey)->findByPk($iToken->tid);
@@ -725,7 +746,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                         }
                     }
                 }
-                
+
                 /* Add the event 'beforeSendEmail */
                 $beforeTokenEmailEvent = new PluginEvent('beforeTokenEmail');
                 $beforeTokenEmailEvent->set('survey', $iSurvey);
@@ -783,7 +804,8 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                 $aCountMail['error']++;
             }
         }
-        $this->sendMailCronFinalLog($aCountMail);
+
+        $this->afterSendEmail($aCountMail, $iSurvey, $sType);
     }
 
     /**
@@ -963,7 +985,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         }
         return $aAvailableAttribute;
     }
-    
+
     /**
      * Fill value for attribute token test
      * @param \Token token to be tested
@@ -1007,12 +1029,12 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             $this->surveyDelayReminderAttribute = $attributes;
         }
     }
-    
+
     /**
      * Test a token attributes for disable sending email
      * @param \Token token to be tested
      * @param string $sType
-     * @return boolean true if disable send mail 
+     * @return boolean true if disable send mail
      */
     public function allowSendMailByAttribute($oToken,$sType='invite',$iSurvey)
     {
@@ -1207,7 +1229,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         $aData['warningString'] = !Survey::model()->hasTokens($surveyId) ? "This survey didn't have token currently, this settings are not used until participant are not activated." : null;
 
         $aSettings=array();
-        
+
         $aSettings[$this->_translate('Basic settings')]=array(
             'maxEmail' => array(
                 'type'=>'int',
