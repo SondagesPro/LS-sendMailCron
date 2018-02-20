@@ -2,7 +2,12 @@
 
 Only partial changelog, [commit history](https://framagit.org/SondagePro-LimeSurvey-plugin/sendMailCron/commits/master) show all changelog.
 
-## [2.2.0] - Unreleased
+## [3.0.0] - Unreleased
+
+### Feature
+- LimeSurvey 3.X compatibility
+
+## [2.2.0] - 2018-02-20
 
 ### Feature
 - Add attachements from core
