@@ -4,11 +4,11 @@
  * Need activate cron system in the server : php yourlimesurveydir/application/commands/console.php plugin cron --interval=X where X is interval in minutes
  *
  * @author Denis Chenu <denis@sondages.pro>
- * @copyright 2016-2017 Denis Chenu <https://www.sondages.pro>
+ * @copyright 2016-2018 Denis Chenu <https://www.sondages.pro>
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> for initial version
  * @copyright 2016-2017 Extract Recherche Marketing for cronTypes and BatchSize
  * @license AGPL v3
- * @version 2.2.0
+ * @version 3.0.0
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -21,7 +21,7 @@
  * GNU General Public License for more details.
  */
 
-class sendMailCron extends \ls\pluginmanager\PluginBase
+class sendMailCron extends PluginBase
 {
     protected $storage = 'DbStorage';
     static protected $description = 'Allow to send token email by cron or sheduled task';
@@ -68,10 +68,6 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             'type' => 'info',
             'content' => 'You need activate cron system in the server : <code>php yourlimesurveydir/application/commands/console.php plugin cron --interval=1</code>. This plugin don\'t use interval, all email of all surveys are tested when cron happen.',
         ),
-        //~ 'information' => array(
-            //~ 'type' => 'info',
-            //~ 'content' => '<div class="well"><p>You need activate cron system in the server : <code>php yourlimesurveydir/application/commands/console.php plugin cron --interval=1</code>. This plugin don\'t use interval, all email of all surveys are tested when cron happen.</p><p>Alternatively, you can use direct event <code>php yourlimesurveydir/application/commands/console.php plugin --target=sendMailCron</code>. In this case, best is to deactivate it in cron event.</div>',
-        //~ ),
         //~ 'enableInCron' => array(
             //~ 'type'=>'checkbox',
             //~ 'value'=>1,
@@ -250,7 +246,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         $event = $this->event;
         // Must control if token table exist
         $iSurveyId=$event->get('survey');
-        if(Survey::model()->hasTokens($iSurveyId)) {
+        if($this->_surveyHasTokens($iSurveyId)) {
             $event->set("surveysettings.{$this->id}", array(
                 'name' => get_class($this),
                 'settings' => array(
@@ -258,7 +254,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
                     'type'=>'link',
                     'label'=>$this->_translate('Mail by cron settings'),
                     'htmlOptions'=>array(
-                        'title'=>gt('This open another page'),
+                        'title'=>$this->_translate('This open another page'),
                     ),
                     'help'=>$this->_translate('This open a new page remind to save your settings.'),
                     'text'=>$this->_translate('Edit email by cron settings'),
@@ -327,7 +323,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
             foreach ($oSurveys as $oSurvey)
             {
                 $iSurvey=$oSurvey->sid;
-                if(tableExists("{{tokens_{$iSurvey}}}"))
+                if($this->_surveyHasTokens($iSurvey))
                 {
                     /* By maxEmail */
                     $maxEmail=$this->getSetting('maxEmail','survey',$iSurvey,"");
@@ -586,7 +582,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         $oCriteria->addCondition("email != '' and email IS NOT NULL");
         $oCriteria->addCondition("token != ''");
         $oCriteria->addCondition("(completed = 'N' OR completed = '' OR completed  IS NULL)");
-        $oCriteria->addCondition("usesleft>0");
+        $oCriteria->addCondition("usesleft>0 OR usesleft IS NULL");
         $oCriteria->addCondition("(validfrom < :validfrom OR validfrom IS NULL)");
         $oCriteria->addCondition("(validuntil > :validuntil OR validuntil IS NULL)");
         $aParams=array(
@@ -905,7 +901,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
     }
 
     /**
-     * Validate a send action : dis we muist stop action
+     * Validate a send action : dis we must stop action
      * @param int[] $aCountMail array for email count
      * @param int $iSurvey survey id
      * @param string $sType
@@ -951,13 +947,11 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         foreach($aTokensAttribute as $key=>$aTokenAttribute) {
             $aAvailableAttribute[$key]=empty($aTokenAttribute['description']) ? $key : $aTokenAttribute['description'];
         }
-        if(Survey::model()->hasTokens($surveyId)) {
-            if(Survey::model()->hasTokens($surveyId)) {
-                $allAttributes=TokenDynamic::model($surveyId)->getCustom_attributes();
-                foreach($allAttributes as $key=>$value) {
-                    if(!array_key_exists($key,$aAvailableAttribute)) {
-                        $aAvailableAttribute[$key] = $key;
-                    }
+        if($this->_surveyHasTokens($surveyId)) {
+            $allAttributes=TokenDynamic::model($surveyId)->getCustom_attributes();
+            foreach($allAttributes as $key=>$value) {
+                if(!array_key_exists($key,$aAvailableAttribute)) {
+                    $aAvailableAttribute[$key] = $key;
                 }
             }
         }
@@ -1134,24 +1128,24 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
     {
         $event = $this->getEvent();
         $surveyId = $event->get('surveyId');
-
-        $href = Yii::app()->createUrl(
-            'admin/pluginhelper',
-            array(
-                'sa' => 'sidebody',
-                'plugin' => get_class($this),
-                'method' => 'actionSettings',
-                'surveyId' => $surveyId
-            )
+        $aMenuItem = array(
+            'label' => $this->_translate('Mail cron'),
+            'iconClass' => 'fa fa-envelope-square',
+            'href' => Yii::app()->createUrl(
+                'admin/pluginhelper',
+                array(
+                    'sa' => 'sidebody',
+                    'plugin' => get_class($this),
+                    'method' => 'actionSettings',
+                    'surveyId' => $surveyId
+                )
+            ),
         );
-
-        $menuItem = new \ls\menu\MenuItem(
-            array(
-                'label' => $this->_translate('Mail cron'),
-                'iconClass' => 'fa fa-envelope-square',
-                'href' => $href
-            )
-        );
+        if (class_exists("\LimeSurvey\Menu\MenuItem")) {
+            $menuItem = new \LimeSurvey\Menu\MenuItem($aMenuItem);
+        } else {
+            $menuItem = new \ls\menu\MenuItem($aMenuItem);
+        }
         $event->append('menuItems', array($menuItem));
     }
 
@@ -1204,7 +1198,7 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
 
         $aData=array();
         /* An alert if survey don't have token */
-        $aData['warningString'] = !Survey::model()->hasTokens($surveyId) ? "This survey didn't have token currently, this settings are not used until participant are not activated." : null;
+        $aData['warningString'] = !$this->_surveyHasTokens($surveyId) ? $this->_translate("This survey didn't have token currently, this settings are not used until participant are not activated.") : null;
 
         $aSettings=array();
         
@@ -1405,6 +1399,16 @@ class sendMailCron extends \ls\pluginmanager\PluginBase
         Yii::import('application.helpers.ClassFactory');
         ClassFactory::registerClass('Token_', 'Token');
         ClassFactory::registerClass('Response_', 'Response');
+    }
+    /**
+     * Some compatibility function
+     * Survey::model()->hasTokens
+     * @param integer $iSurveyId
+     * @return boolean;
+     */
+    private function _surveyHasTokens($iSurveyId) {
+        Yii::import('application.helpers.common_helper', true);
+        return tableExists("{{tokens_".$iSurveyId."}}");
     }
     /**
      * get translation

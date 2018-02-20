@@ -1,4 +1,13 @@
 <?php
-class DbStorage extends ls\pluginmanager\DbStorage {
+/**
+ * empty class to extend DbStorage in console
+ */
+if (class_exists("\LimeSurvey\PluginManager\DbStorage")) {
+  class DbStorage extends \LimeSurvey\PluginManager\DbStorage {
 
+  }
+} else {
+  class DbStorage extends \ls\pluginmanager\DbStorage {
+
+  }
 }
