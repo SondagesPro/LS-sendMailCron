@@ -682,6 +682,8 @@ class sendMailCron extends PluginBase
             $aFieldsArray["{SURVEYWELCOMETEXT}"]=$aSurveys[$sLanguage]['surveyls_welcometext'];
             $aFieldsArray["{ADMINNAME}"]=$aSurveys[$sLanguage]['admin'];
             $aFieldsArray["{ADMINEMAIL}"]=$aSurveys[$sLanguage]['adminemail'];
+	    $aFieldsArray["{EXPIRY}"]=$aSurveys[$sLanguage]['expiry'];
+
             foreach ($oToken->attributes as $attribute=>$value)
             {
                 $aFieldsArray['{' . strtoupper($attribute) . '}'] =$value;
