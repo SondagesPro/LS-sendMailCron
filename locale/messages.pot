@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: sendMailCron\n"
-"POT-Creation-Date: 2017-08-30 18:46+0200\n"
+"POT-Creation-Date: 2018-06-21 17:57+0200\n"
 "PO-Revision-Date: 2017-03-16 14:13+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -10,148 +10,189 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 2.0.3\n"
+"X-Generator: Poedit 2.0.8\n"
 "X-Poedit-Basepath: ..\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Poedit-KeywordsList: _translate\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 "X-Poedit-SearchPath-0: .\n"
 
-#: sendMailCron.php:215
+#: sendMailCron.php:255
 msgid "Mail by cron settings"
 msgstr ""
 
-#: sendMailCron.php:219
-msgid "Remind to save your settings before"
+#: sendMailCron.php:257
+msgid "This open another page"
 msgstr ""
 
-#: sendMailCron.php:220
+#: sendMailCron.php:259
+msgid "This open a new page remind to save your settings."
+msgstr ""
+
+#: sendMailCron.php:260
 msgid "Edit email by cron settings"
 msgstr ""
 
-#: sendMailCron.php:897
+#: sendMailCron.php:1156
 msgid "Mail cron"
 msgstr ""
 
-#: sendMailCron.php:932
+#: sendMailCron.php:1210
 msgid "disabled"
 msgstr ""
 
-#: sendMailCron.php:938
+#: sendMailCron.php:1218
 msgid "Leave empty to send all available emails."
 msgstr ""
 
-#: sendMailCron.php:940
+#: sendMailCron.php:1220
 #, php-format
 msgid ""
 "Leave empty to send all available emails,only limited by global batch size "
 "(%s) for all surveys."
 msgstr ""
 
-#: sendMailCron.php:950
+#: sendMailCron.php:1225
+msgid ""
+"This survey didn't have token currently, this settings are not used until "
+"participant are not activated."
+msgstr ""
+
+#: sendMailCron.php:1229
 msgid "Basic settings"
 msgstr ""
 
-#: sendMailCron.php:956
+#: sendMailCron.php:1235
 msgid "Max email to send (invitation + remind) to each participant."
 msgstr ""
 
-#: sendMailCron.php:957
+#: sendMailCron.php:1236
 #, php-format
 msgid "0 to deactivate sending of email, empty to use default (%s)"
 msgstr ""
 
-#: sendMailCron.php:965
+#: sendMailCron.php:1244
 msgid "Min delay between invitation and first reminder."
 msgstr ""
 
-#: sendMailCron.php:966 sendMailCron.php:975
+#: sendMailCron.php:1245 sendMailCron.php:1254
 #, php-format
 msgid "In days, empty for default (%s)"
 msgstr ""
 
-#: sendMailCron.php:974
+#: sendMailCron.php:1253
 msgid "Min delay between reminders."
 msgstr ""
 
-#: sendMailCron.php:979
+#: sendMailCron.php:1258
 msgid "Batch size"
 msgstr ""
 
-#: sendMailCron.php:985
+#: sendMailCron.php:1264
 msgid "Max email to send (invitation + remind) in one batch for this survey."
 msgstr ""
 
-#: sendMailCron.php:994
+#: sendMailCron.php:1273
 msgid "Max email to send for invitation in one batch for this survey."
 msgstr ""
 
-#: sendMailCron.php:995
+#: sendMailCron.php:1274
 msgid "The max email setting can not be exceeded."
 msgstr ""
 
-#: sendMailCron.php:1003
+#: sendMailCron.php:1282
 msgid "Max email to send for reminder in one batch for this survey."
 msgstr ""
 
-#: sendMailCron.php:1004
+#: sendMailCron.php:1283
 msgid ""
 "The max email setting can not be exceeded. Reminders are sent after "
 "invitation."
 msgstr ""
 
-#: sendMailCron.php:1013 sendMailCron.php:1016
+#: sendMailCron.php:1292 sendMailCron.php:1295
 msgid "All week days"
 msgstr ""
 
-#: sendMailCron.php:1023
+#: sendMailCron.php:1302
 msgid "Day of week for sending email"
 msgstr ""
 
-#: sendMailCron.php:1025
+#: sendMailCron.php:1304
 msgid "Monday"
 msgstr ""
 
-#: sendMailCron.php:1026
+#: sendMailCron.php:1305
 msgid "Thursday"
 msgstr ""
 
-#: sendMailCron.php:1027
+#: sendMailCron.php:1306
 msgid "Wednesday"
 msgstr ""
 
-#: sendMailCron.php:1028
+#: sendMailCron.php:1307
 msgid "Thuesday"
 msgstr ""
 
-#: sendMailCron.php:1029
+#: sendMailCron.php:1308
 msgid "Friday"
 msgstr ""
 
-#: sendMailCron.php:1030
+#: sendMailCron.php:1309
 msgid "Saturday"
 msgstr ""
 
-#: sendMailCron.php:1031
+#: sendMailCron.php:1310
 msgid "Sunday"
 msgstr ""
 
-#: sendMailCron.php:1044
+#: sendMailCron.php:1323
 msgid "Only if no moment is set"
 msgstr ""
 
-#: sendMailCron.php:1044
+#: sendMailCron.php:1323
 msgid "At all moment"
 msgstr ""
 
-#: sendMailCron.php:1059
+#: sendMailCron.php:1338
 msgid "Moment for emailing"
 msgstr ""
 
-#: sendMailCron.php:1065
+#: sendMailCron.php:1344
 msgid "When email must be sent"
 msgstr ""
 
-#: sendMailCron.php:1068
+#: sendMailCron.php:1348 sendMailCron.php:1350 sendMailCron.php:1358
+#: sendMailCron.php:1366
+msgid "None"
+msgstr ""
+
+#: sendMailCron.php:1355 sendMailCron.php:1363 sendMailCron.php:1371
+#, php-format
+msgid "None - %s"
+msgstr ""
+
+#: sendMailCron.php:1378 sendMailCron.php:1387 sendMailCron.php:1396
+#, php-format
+msgid "Leave default (%s)"
+msgstr ""
+
+#: sendMailCron.php:1380
+msgid "Attribute used for maximum number of emails."
+msgstr ""
+
+#: sendMailCron.php:1389
+msgid "Attribute used for min delay between inviation and 1st reminder."
+msgstr ""
+
+#: sendMailCron.php:1398
+msgid "Attribute used for min delay between each reminders."
+msgstr ""
+
+#: sendMailCron.php:1403
+msgid "Token attribute usage"
+msgstr ""
+
+#: sendMailCron.php:1407
 msgid "Send email by cron settings"
 msgstr ""
