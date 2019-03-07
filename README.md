@@ -2,18 +2,18 @@
 Allow to send token email (invite or reminder) via PHP cli . This allow to use crontab or Scheduled task to send email.
 
 ## Installation
-- This plugin is only tested with LimeSurvey 2.06. Tested on 2.50 and 3.7.0 build (always use latest build if possible),
+- This plugin is tested on 2.50 and 3.7.0 build (always use latest build if possible),
 - In some LimeSurvey version : you need to manually create the `./application/runtime` to use CFileLogRoute ([See LimeSurvey manual](https://manual.limesurvey.org/Cron)).
 
 ### Via GIT
-- Go to your LimeSurvey Directory (version up to 2.06, build 150729)
+- Go to your LimeSurvey Directory (version up to 2.54.4)
 - Clone in plugins/sendMailCron directory
 
 ### Via ZIP dowload
-- Get the file [sendMailCron.zip](https://extensions.sondages.pro/IMG/auto/sendMailCron.zip) (If you use LimeSurvey 2.54.4 or up)
+- Get the file [sendMailCron.zip](https://dl.sondages.pro/sendMailCron.zip) (If you use LimeSurvey 2.54.4 or up)
 - Extract : `unzip sendMailCron.zip`
 - Move the directory to plugins/ directory inside LimeSUrvey
-- If you use LimeSurvey 2.54.3 or below : use [sendMailCron_2.6lts_compat.zip](https://extensions.sondages.pro/IMG/auto/sendMailCron_2.6lts_compat.zip)
+- If you use LimeSurvey 2.54.3 or below : use [sendMailCron_2.6lts_compat.zip](https://dl.sondages.pro/sendMailCron_2.6lts_compat.zip)
 
 ## Usage
 
@@ -99,18 +99,18 @@ The plugin dispatch two custom events.
 
 ## Contribute
 
-Issue and merge request are welcome on [framagit](https://framagit.org/SondagePro-LimeSurvey-plugin/sendMailCron) or [github](https://github.com/SondagesPro/LS-sendMailCron/).
+Issue and merge request are welcome on [gitlab](https://gitlab.com/SondagesPro/mailing/sendMailCron) or [github](https://github.com/SondagesPro/LS-sendMailCron/).
 
 Translation can be done via [Glotpress of Sondages Pro plugin](http://translate.sondages.pro/projects/sendmailcron)
 
 
 ## Home page & Copyright
 - HomePage <http://extensions.sondages.pro/sendmailcron/>
-- Copyright © 2016-2017 Denis Chenu <http://sondages.pro> and [contributors](https://gitlab.com/SondagesPro/sendMailCron/graphs/master)
+- Copyright © 2016-2019 Denis Chenu <http://sondages.pro> and [contributors](https://gitlab.com/SondagesPro/sendMailCron/graphs/master)
 - Copyright © 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com>
 - Copyright © 2016-2017 Extract Recherche Marketing <http://www.extractmarketing.com>
 - Licence : GNU Affero General Public License <https://www.gnu.org/licenses/gpl-3.0.html>
 
 ## Support
-- Issues <https://git.framasoft.org/SondagePro-LimeSurvey-plugin/sendMailCron>
-- Professional support <http://extensions.sondages.pro/1>
+- Issues <https://gitlab.com/SondagesPro/mailing/sendMailCron/issues>
+- Professional support <https://support.sondages.pro/>
