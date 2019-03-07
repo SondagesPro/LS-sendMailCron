@@ -4,11 +4,11 @@
  * Need activate cron system in the server : php yourlimesurveydir/application/commands/console.php plugin cron --interval=X where X is interval in minutes
  *
  * @author Denis Chenu <denis@sondages.pro>
- * @copyright 2016-2018 Denis Chenu <https://www.sondages.pro>
+ * @copyright 2016-2019 Denis Chenu <https://www.sondages.pro>
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> 
  * @copyright 2016-2018 Extract Recherche Marketing <https://dialogs.ca>
  * @license AGPL v3
- * @version 3.1.0
+ * @version 3.1.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -422,6 +422,9 @@ class sendMailCron extends PluginBase
                 Yii::app()->setConfig("timeadjust",0);
             }
         }
+        if(empty(Yii::app()->getConfig("timeadjust"))) {
+            return date($dformat, strtotime($date));
+        }
         return date($dformat, strtotime(Yii::app()->getConfig("timeadjust"), strtotime($date)));
     }
 
@@ -543,9 +546,9 @@ class sendMailCron extends PluginBase
             }
         }
 
-        $dToday=dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i:s", Yii::app()->getConfig("timeadjust"));
-        $dYesterday=dateShift(date("Y-m-d H:i:s", time() - 86400), "Y-m-d H:i:s", Yii::app()->getConfig("timeadjust"));
-        $dTomorrow=dateShift(date("Y-m-d H:i:s", time() + 86400), "Y-m-d H:i:s", Yii::app()->getConfig("timeadjust"));
+        $dToday=self::_dateShifted(date("Y-m-d H:i:s"));
+        $dYesterday=self::_dateShifted(date("Y-m-d H:i:s", time() - 86400));
+        $dTomorrow=self::_dateShifted(date("Y-m-d H:i:s", time() + 86400));
         // Test si survey actif et avec bonne date $aSurveys[$sBaseLanguage]
 
         $sFrom = "{$aSurveys[$sBaseLanguage]['admin']} <{$aSurveys[$sBaseLanguage]['adminemail']}>";
@@ -593,7 +596,7 @@ class sendMailCron extends PluginBase
             $dAfterSentRemind=date("Y-m-d H:i",strtotime("-".intval($dayDelayReminder)." days",$dtToday));// sent is X day before and up
             $dAfterSent=date("Y-m-d H:i",strtotime("-".intval($delayInvitation)." days",$dtToday));// sent is X day before and up
         }
-        $dTomorrow=dateShift(date("Y-m-d H:i", time() + 86400 ), "Y-m-d H:i", Yii::app()->getConfig("timeadjust"));// Tomorrow for validuntil
+        $dTomorrow=self::_dateShifted(date("Y-m-d H:i", time() + 86400 ));// Tomorrow for validuntil
         $this->sendMailCronLog("Survey {$iSurvey}, {$sType} Valid from {$dFrom} And Valid until {$dTomorrow} (or NULL)",3);
         $oCriteria = new CDbCriteria;
         $oCriteria->select = "tid";
@@ -778,11 +781,11 @@ class sendMailCron extends PluginBase
                 $this->currentSurveyBatchSize++;
                 if(!$this->simulate){
                     if($sType=='invite'){
-                        $oToken->sent=dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i", Yii::app()->getConfig("timeadjust"));
+                        $oToken->sent=self::_dateShifted(date("Y-m-d H:i:s"));
                         $txtLog="sent set to ".$oToken->sent;
                     }
                     if($sType=='remind'){
-                        $oToken->remindersent=dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i", Yii::app()->getConfig("timeadjust"));
+                        $oToken->remindersent=self::_dateShifted(date("Y-m-d H:i:s"));
                         $oToken->remindercount++;
                         $txtLog="remindersent set to ".$oToken->remindersent." count:".$oToken->remindercount;
                     }
@@ -1052,7 +1055,7 @@ class sendMailCron extends PluginBase
         if($sType=='invite') {
             return true;
         }
-        $dateToday=dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i:s", Yii::app()->getConfig("timeadjust"));
+        $dateToday=self::_dateShifted(date("Y-m-d H:i:s"));
         $lastSend=$oToken->sent;
         if($oToken->remindersent && $oToken->remindersent!="N") {
             $lastSend=$oToken->remindersent;
