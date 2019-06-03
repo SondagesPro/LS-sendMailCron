@@ -8,7 +8,7 @@
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> 
  * @copyright 2016-2018 Extract Recherche Marketing <https://dialogs.ca>
  * @license AGPL v3
- * @version 3.1.1
+ * @version 3.1.2
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -408,10 +408,10 @@ class sendMailCron extends PluginBase
     /**
      * Return the date fixed by config (SQL format)
      * @param string $date in SQL format
-     * @param string $dformat in SQL format
+     * @param string $dformat in token opr SQL format
      * @return string
      */
-    private static function _dateShifted($date, $dformat="Y-m-d H:i:s")
+    private static function _dateShifted($date, $dformat="Y-m-d H:i")
     {
         if(Yii::app()->getConfig("timeadjust",false)===false)
         {
