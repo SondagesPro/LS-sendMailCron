@@ -8,7 +8,7 @@
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> 
  * @copyright 2016-2018 Extract Recherche Marketing <https://dialogs.ca>
  * @license AGPL v3
- * @version 3.1.2
+ * @version 3.2.0
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -706,7 +706,7 @@ class sendMailCron extends PluginBase
             $aFieldsArray["{SURVEYWELCOMETEXT}"]=$aSurveys[$sLanguage]['surveyls_welcometext'];
             $aFieldsArray["{ADMINNAME}"]=$aSurveys[$sLanguage]['admin'];
             $aFieldsArray["{ADMINEMAIL}"]=$aSurveys[$sLanguage]['adminemail'];
-	    $aFieldsArray["{EXPIRY}"]=$aSurveys[$sLanguage]['expiry'];
+            $aFieldsArray["{EXPIRY}"]=$aSurveys[$sLanguage]['expiry'];
 
             foreach ($oToken->attributes as $attribute=>$value)
             {
@@ -1427,6 +1427,34 @@ class sendMailCron extends PluginBase
         Yii::import('application.helpers.ClassFactory');
         ClassFactory::registerClass('Token_', 'Token');
         ClassFactory::registerClass('Response_', 'Response');
+        $defaulttheme = Yii::app()->getConfig('defaulttheme');
+        /* Bad config set for rootdir */
+        if( !is_dir(Yii::app()->getConfig('standardthemerootdir').DIRECTORY_SEPARATOR.$defaulttheme) && !is_dir(Yii::app()->getConfig('userthemerootdir').DIRECTORY_SEPARATOR.$defaulttheme)) {
+            /* This included can be broken */
+            $webroot = (string) Yii::getPathOfAlias('webroot');
+            /* Switch according to LimeSurvey version */
+            $configFixed = array(
+                'standardthemerootdir'   => $webroot.DIRECTORY_SEPARATOR."templates",
+                'userthemerootdir'       => $webroot.DIRECTORY_SEPARATOR."upload".DIRECTORY_SEPARATOR."templates",
+            );
+            if(intval(Yii::app()->getConfig('versionnumber')) > 2) {
+                $configFixed = array(
+                    'standardthemerootdir'   => $webroot.DIRECTORY_SEPARATOR."themes".DIRECTORY_SEPARATOR."survey",
+                    'userthemerootdir'       => $webroot.DIRECTORY_SEPARATOR."upload".DIRECTORY_SEPARATOR."themes".DIRECTORY_SEPARATOR."survey",
+                );
+            }
+            $configConfig = require (Yii::getPathOfAlias('application').DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'config.php');
+            if (isset($configConfig['config'])) {
+                $configFixed = array_merge($configFixed, $configConfig['config']);
+            }
+            $aConfigToFix = array(
+                'standardthemerootdir',
+                'userthemerootdir',
+            );
+            foreach($aConfigToFix as $configToFix) {
+                Yii::app()->setConfig($configToFix,$configFixed[$configToFix]);
+            }
+        }
     }
 
     /**
