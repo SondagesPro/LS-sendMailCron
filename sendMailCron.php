@@ -8,7 +8,7 @@
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> 
  * @copyright 2016-2018 Extract Recherche Marketing <https://dialogs.ca>
  * @license AGPL v3
- * @version 3.2.0
+ * @version 3.2.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -1422,7 +1422,9 @@ class sendMailCron extends PluginBase
     private function _LsCommandFix()
     {
         /* Bad autoloading in command */
-        include_once(dirname(__FILE__)."/DbStorage.php");
+        if(!class_exists("DbStorage")) {
+            include_once(dirname(__FILE__)."/DbStorage.php");
+        }
         // These take care of dynamically creating a class for each token / response table.
         Yii::import('application.helpers.ClassFactory');
         ClassFactory::registerClass('Token_', 'Token');
