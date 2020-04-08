@@ -2,8 +2,17 @@
 Allow to send token email (invite or reminder) via PHP cli . This allow to use crontab or Scheduled task to send email.
 
 ## Installation
-- This plugin is tested on 2.50 and 3.7.0 build (always use latest build if possible),
+
+- See [Install and activate a plugin for LimeSurvey](https://extensions.sondages.pro/about/install-and-activate-a-plugin-for-limesurvey.html) for version before 4.0
+- This version was in beta phase for LimeSUrvey 4.X and up.
 - In some LimeSurvey version : you need to manually create the `./application/runtime` to use CFileLogRoute ([See LimeSurvey manual](https://manual.limesurvey.org/Cron)).
+
+### LimeSurvey version compatibility
+- 2.73 : **stable** checked and used
+- 3.X : **stable** checked and used
+- 4.X : **beta** : know issues
+    - didn't work when encrypt token data
+    - …
 
 ### Via GIT
 - Go to your LimeSurvey Directory (version up to 2.54.4)
@@ -106,7 +115,7 @@ Translation can be done via [Glotpress of Sondages Pro plugin](http://translate.
 
 ## Home page & Copyright
 - HomePage <http://extensions.sondages.pro/sendmailcron/>
-- Copyright © 2016-2019 Denis Chenu <http://sondages.pro> and [contributors](https://gitlab.com/SondagesPro/sendMailCron/graphs/master)
+- Copyright © 2016-2020 Denis Chenu <http://sondages.pro> and [contributors](https://gitlab.com/SondagesPro/sendMailCron/graphs/master)
 - Copyright © 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com>
 - Copyright © 2016-2017 Extract Recherche Marketing <http://www.extractmarketing.com>
 - Licence : GNU Affero General Public License <https://www.gnu.org/licenses/gpl-3.0.html>

@@ -316,8 +316,9 @@ class sendMailCron extends PluginBase
         Yii::import('application.helpers.expressions.em_manager_helper', true);
         // Fix the url @todo parse url and validate
         Yii::app()->request->hostInfo=$this->getSetting("hostInfo");
-        Yii::app()->request->baseUrl=$this->getSetting("baseUrl");
+        Yii::app()->request->setBaseUrl($this->getSetting("baseUrl"));
         Yii::app()->request->scriptUrl=$this->getSetting("scriptUrl");
+        Yii::app()->getUrlManager()->setBaseUrl($this->getSetting("baseUrl"));
         if($oSurveys)
         {
             foreach ($oSurveys as $oSurvey)
@@ -537,8 +538,8 @@ class sendMailCron extends PluginBase
         $aAttachments = array();
         foreach ($aSurveyLangs as $language) {
             $aLangAttachments = array();
-            if (isset($aSurveys[$sSurveyLanguage]['attachments'])) {
-                $aCurrentAttachments = unserialize($aSurveys[$sSurveyLanguage]['attachments']);
+            if (!empty($aSurveys[$sSurveyLanguage]['attachments'])) {
+                $aCurrentAttachments = @unserialize($aSurveys[$sSurveyLanguage]['attachments']);
                 //$aLangAttachments = array();
                 if(isset($aCurrentAttachments[$attachementTemplate]) && is_array($aCurrentAttachments[$attachementTemplate])) {
                     $aLangAttachments[$language] = $aCurrentAttachments[$attachementTemplate];
@@ -1203,7 +1204,7 @@ class sendMailCron extends PluginBase
             $this->set('maxEmailAttribute', App()->getRequest()->getPost('maxEmailAttribute'), 'Survey', $surveyId);
             $this->set('delayInvitationAttribute', App()->getRequest()->getPost('delayInvitationAttribute'), 'Survey', $surveyId);
             $this->set('delayReminderAttribute', App()->getRequest()->getPost('delayReminderAttribute'), 'Survey', $surveyId);
-            if(App()->getRequest()->getPost('save'.get_class($this)=='redirect')) {
+            if(App()->getRequest()->getPost('save'.get_class($this))=='redirect') {
                 Yii::app()->getController()->redirect(Yii::app()->getController()->createUrl('admin/survey',array('sa'=>'view','surveyid'=>$surveyId)));
             }
         }
@@ -1426,6 +1427,10 @@ class sendMailCron extends PluginBase
         // These take care of dynamically creating a class for each token / response table.
         /* TODO check if not already registered */
         Yii::import('application.helpers.ClassFactory');
+        if(!function_exists('gT')) {
+            /* 4.X issue : Error: Call to undefined function gT() in application/models/SurveysGroupsettings.php:403 */
+            Yii::import('application.helpers.common_helper', true);
+        }
         ClassFactory::registerClass('Token_', 'Token');
         ClassFactory::registerClass('Response_', 'Response');
         $defaulttheme = Yii::app()->getConfig('defaulttheme');

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+    <metadata>
+        <name>sendMailCron</name>
+        <type>plugin</type>
+        <creationDate>2016-08-04</creationDate>
+        <lastUpdate>2020-01-23</lastUpdate>
+        <author>Denis Chenu</author>
+        <authorUrl>https://www.sondages.pro</authorUrl>
+        <version>3.3.0</version>
+        <license>GNU Affero General Public License</license>
+        <description><![CDATA[Allow to send token email by cron or sheduled task.]]></description>
+    </metadata>
+
+    <compatibility>
+        <version>3.0</version>
+        <version>4.0</version>
+    </compatibility>
+
+    <updaters disabled="disabled">
+    </updaters>
+</config>
