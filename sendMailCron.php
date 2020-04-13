@@ -8,7 +8,7 @@
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> 
  * @copyright 2016-2018 Extract Recherche Marketing <https://dialogs.ca>
  * @license AGPL v3
- * @version 3.2.2
+ * @version 3.3.0
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -68,16 +68,16 @@ class sendMailCron extends PluginBase
             'type' => 'info',
             'content' => 'You need activate cron system in the server : <code>php yourlimesurveydir/application/commands/console.php plugin cron --interval=1</code>. This plugin don\'t use interval, all email of all surveys are tested when cron happen.',
         ),
-        //~ 'enableInCron' => array(
-            //~ 'type'=>'checkbox',
-            //~ 'value'=>1,
-            //~ 'htmlOption'=>array(
-                //~ 'uncheckValue'=>0
-            //~ ),
-            //~ 'label'=>"Enable in cron event.",
-            //~ 'help'=>"Enable sendMailCron in cron event, you can use direct event for sending email.",
-            //~ 'default'=>1,
-        //~ ),
+        'enableInCron' => array(
+            'type'=>'checkbox',
+            'value'=>1,
+            'htmlOption'=>array(
+                'uncheckValue'=>0
+            ),
+            'label'=>"Enable in cron event.",
+            'help'=>"Enable sendMailCron in cron event, you can use direct event for sending email.",
+            'default'=>1,
+        ),
         'maxBatchSize' => array(
             'type'=>'int',
             'htmlOptions'=>array(
@@ -183,6 +183,9 @@ class sendMailCron extends PluginBase
     {
         /* Action on cron */
         $this->subscribe('cron','sendMailByCron');
+        /* Action on direct */
+        $this->subscribe('direct','sendMailByCli');
+
         /* Needed config */
         $this->subscribe('beforeActivate');
 
@@ -278,6 +281,7 @@ class sendMailCron extends PluginBase
         $this->_setConfigs();
         $this->setArgs();
         /* @todo replace by option (in json array ?) */
+        $this->sendTokenMessages();
     }
 
     /**
