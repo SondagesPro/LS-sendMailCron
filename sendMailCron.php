@@ -8,7 +8,7 @@
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> 
  * @copyright 2016-2018 Extract Recherche Marketing <https://dialogs.ca>
  * @license AGPL v3
- * @version 4.0.0
+ * @version 4.0.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -574,13 +574,14 @@ class sendMailCron extends PluginBase
                 );
                 continue;
             }
-            $this->sendMailCronLog("Send : {$oToken->email} ({$oToken->tid}) for {$iSurvey}",3);
             $mail = \LimeMailer::getInstance();
             $mail->setTypeWithRaw($sType);
             $mail->setToken($oToken->token);
             if($this->simulate) {
+                $this->sendMailCronLog("Simulate send : {$oToken->email} ({$oToken->tid}) for {$iSurvey}",3);
                 $success = true;
             } else {
+                $this->sendMailCronLog("Send : {$oToken->email} ({$oToken->tid}) for {$iSurvey}",3);
                 $success = $mail->sendMessage();
             }
             /* action if email is sent */
@@ -592,16 +593,18 @@ class sendMailCron extends PluginBase
                     if($sType=='invite'){
                         Token::model($iSurvey)->updateByPk($oToken->tid,array('sent'=>self::dateShifted(date("Y-m-d H:i:s"))));
                         $oToken->sent = self::dateShifted(date("Y-m-d H:i:s"));
-                        $txtLog="sent set to ".$oToken->sent;
+                        $txtLog = "sent set to ".$oToken->sent;
                     }
                     if($sType=='remind'){
                         $oToken->remindersent = self::dateShifted(date("Y-m-d H:i:s"));
                         $oToken->remindercount++;
-                        $txtLog="remindersent set to ".$oToken->remindersent." count:".$oToken->remindercount;
+                        $txtLog = "remindersent set to ".$oToken->remindersent." count:".$oToken->remindercount;
                     }
-                    if($oToken->save()) {
-                        $this->sendMailCronLog("Email {$oToken->email} : $txtLog",3);
-                    } else {
+                    if($this->simulate) {
+                        $txtLog .= " (simulation)";
+                    }
+                    $this->sendMailCronLog("Email {$oToken->email} : $txtLog",3);
+                    if(!$oToken->save()) {
                         $error=CVarDumper::dumpAsString($oToken->getErrors(), 3, false);
                         $this->sendMailCronLog("Email {$oToken->email} error: $error",1);
                     }
