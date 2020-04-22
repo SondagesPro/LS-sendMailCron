@@ -8,11 +8,9 @@ Allow to send token email (invite or reminder) via PHP cli . This allow to use c
 - In some LimeSurvey version : you need to manually create the `./application/runtime` to use CFileLogRoute ([See LimeSurvey manual](https://manual.limesurvey.org/Cron)).
 
 ### LimeSurvey version compatibility
-- 2.73 : **stable** checked and used
-- 3.X : **stable** checked and used
-- 4.X : **beta** : know issues
-    - didn't work when encrypt token data
-    - …
+- 2.73 : This version was not tested
+- 3.X : This version was not tested
+- 4.X : Tested
 
 ### Via GIT
 - Go to your LimeSurvey Directory (version up to 2.54.4)
@@ -23,6 +21,7 @@ Allow to send token email (invite or reminder) via PHP cli . This allow to use c
 - Extract : `unzip sendMailCron.zip`
 - Move the directory to plugins/ directory inside LimeSUrvey
 - If you use LimeSurvey 2.54.3 or below : use [sendMailCron_2.6lts_compat.zip](https://dl.sondages.pro/sendMailCron_2.6lts_compat.zip)
+- If you use LimeSurvey 3.23 or below and need a stable version See [LS3api](https://gitlab.com/SondagesPro/mailing/sendMailCron/-/tree/LS3api)
 
 ## Usage
 
@@ -123,6 +122,7 @@ Translation can be done via [Glotpress of Sondages Pro plugin](http://translate.
 - Copyright © 2016-2020 Denis Chenu <http://sondages.pro> and [contributors](https://gitlab.com/SondagesPro/sendMailCron/graphs/master)
 - Copyright © 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com>
 - Copyright © 2016-2017 Extract Recherche Marketing <http://www.extractmarketing.com>
+- Copyright © 2020 Martina Hansens Hospital <http://mhh.no>
 - Licence : GNU Affero General Public License <https://www.gnu.org/licenses/gpl-3.0.html>
 
 ## Support
