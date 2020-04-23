@@ -8,7 +8,7 @@
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> 
  * @copyright 2016-2018 Extract Recherche Marketing <https://dialogs.ca>
  * @license AGPL v3
- * @version 4.0.1
+ * @version 4.0.2
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -604,7 +604,7 @@ class sendMailCron extends PluginBase
                         $txtLog .= " (simulation)";
                     }
                     $this->sendMailCronLog("Email {$oToken->email} : $txtLog",3);
-                    if(!$oToken->save()) {
+                    if(!$oToken->encryptSave(true)) {
                         $error=CVarDumper::dumpAsString($oToken->getErrors(), 3, false);
                         $this->sendMailCronLog("Email {$oToken->email} error: $error",1);
                     }
