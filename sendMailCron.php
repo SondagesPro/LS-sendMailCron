@@ -4,11 +4,11 @@
  * Need activate cron system in the server : php yourlimesurveydir/application/commands/console.php plugin cron --interval=X where X is interval in minutes
  *
  * @author Denis Chenu <denis@sondages.pro>
- * @copyright 2016-2019 Denis Chenu <https://www.sondages.pro>
+ * @copyright 2016-2020 Denis Chenu <https://www.sondages.pro>
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> 
  * @copyright 2016-2018 Extract Recherche Marketing <https://dialogs.ca>
  * @license AGPL v3
- * @version 4.0.2
+ * @version 4.0.3
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -322,11 +322,15 @@ class sendMailCron extends PluginBase
         Yii::import('application.helpers.surveytranslator_helper', true);
         Yii::import('application.helpers.replacements_helper', true);
         Yii::import('application.helpers.expressions.em_manager_helper', true);
+        //print_r($urlManager);
         // Fix the url @todo parse url and validate
-        Yii::app()->request->hostInfo=$this->getSetting("hostInfo");
-        Yii::app()->request->setBaseUrl($this->getSetting("baseUrl"));
-        Yii::app()->request->scriptUrl=$this->getSetting("scriptUrl");
-        Yii::app()->getUrlManager()->setBaseUrl($this->getSetting("baseUrl"));
+        Yii::app()->request->hostInfo = $this->getSetting("hostInfo");
+        /* Issue with url manager and script … @todo : fix LimeSurvey core */
+        $baseUrl = dirname(trim($this->getSetting("baseUrl")));
+        if(Yii::app()->getUrlManager()->showScriptName) {
+            $baseUrl = $baseUrl."/index.php";
+        }
+        Yii::app()->getUrlManager()->setBaseUrl($baseUrl);
         if($oSurveys)
         {
             foreach ($oSurveys as $oSurvey)
@@ -1027,7 +1031,11 @@ class sendMailCron extends PluginBase
             $this->settings['baseUrl']['default']= Yii::app()->request->getBaseUrl();
             $this->settings['scriptUrl']['default']= Yii::app()->request->getScriptUrl();
         }
-        $pluginSettings= parent::getPluginSettings($getValues);
+        $pluginSettings = parent::getPluginSettings($getValues);
+        if(intval(Yii::app()->getConfig('versionnumber') >= 4)) {
+            unset($pluginSettings['scriptUrl']);
+            $pluginSettings['baseUrl']['help'] = "Only dirname are used, script url are automatically checked with showScriptName setting for urlManager in your config.php file";
+        }
         if($getValues){
             if($pluginSettings['cronTypes']){
                 $pluginSettings['cronTypes']['current']=implode("\n",explode("|",$pluginSettings['cronTypes']['current']));
