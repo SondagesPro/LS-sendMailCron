@@ -4,15 +4,14 @@ Allow to send token email (invite or reminder) via PHP cli . This allow to use c
 ## Installation
 
 - See [Install and activate a plugin for LimeSurvey](https://extensions.sondages.pro/about/install-and-activate-a-plugin-for-limesurvey.html) for version before 4.0
-- This version was in beta phase for LimeSUrvey 4.X and up.
+- This version was tested with LimeSurvey version 4.1.18,
+- This version muts work with all LimeSurvey version 2.55 and up
 - In some LimeSurvey version : you need to manually create the `./application/runtime` to use CFileLogRoute ([See LimeSurvey manual](https://manual.limesurvey.org/Cron)).
 
 ### LimeSurvey version compatibility
-- 2.73 : **stable** checked and used
-- 3.X : **stable** checked and used
-- 4.X : **beta** : know issues
-    - didn't work when encrypt token data
-    - …
+- 2.73 : This version was not tested
+- 3.X : This version was not tested
+- 4.X : Tested
 
 ### Via GIT
 - Go to your LimeSurvey Directory (version up to 2.54.4)
@@ -23,6 +22,7 @@ Allow to send token email (invite or reminder) via PHP cli . This allow to use c
 - Extract : `unzip sendMailCron.zip`
 - Move the directory to plugins/ directory inside LimeSUrvey
 - If you use LimeSurvey 2.54.3 or below : use [sendMailCron_2.6lts_compat.zip](https://dl.sondages.pro/sendMailCron_2.6lts_compat.zip)
+- If you use LimeSurvey 3.23 or below and need a stable version See [LS3api](https://gitlab.com/SondagesPro/mailing/sendMailCron/-/tree/LS3api)
 
 ## Usage
 
@@ -35,7 +35,7 @@ Allow to send token email (invite or reminder) via PHP cli . This allow to use c
   - Same and more in each surveys setting
   - If plugin validate the email (this allow only one email by token)
   - The cron type list to be allowed in survey settings
-- To test the plugin you need to call it via PHP Cli `php yourlimesurveydir/application/commands/console.php plugin cron sendMailCronSimulate=1`
+- To test the plugin you need to call it via PHP Cli `php yourlimesurveydir/application/commands/console.php plugin --target=sendMailCron sendMailCronSimulate=1`
 - This line can be added in your crontab or Task Scheduler
 - Per survey settings are found on Tools menu
 
@@ -74,14 +74,14 @@ To use cron event withoput sending email : you have `enableInCron` settings or y
 
 - `php yourlimesurveydir/application/commands/console.php plugin cron sendMailCronDebug=0` nothing is printed to screen except errors. By default show tested survey and action, and number of email send for each survey
 - `php yourlimesurveydir/application/commands/console.php plugin cron sendMailCronDebug=3 sendMailCronSimulate=1` just to see what happen before put the command in the crontab, with all the trace of the plugin
-- `php yourlimesurveydir/application/commands/console.php plugin --target=sendMailCron`
+- `php yourlimesurveydir/application/commands/console.php plugin --target=sendMailCron` (since LimeSurvey 2.63.0)
 
 ### Logging
 Plugin use 2 system for logging :
 - echo at console what happen : then you can use cron system to send an email, or test the plugin : error and info was echoed. Use `sendMailCronDebug` to choose what you want : the 4 states was
   - 0 (error): only error are shown
   - 1 (base information): show warning and basic information (number of email sent, batch size done …)
-  - 2 (information) : shown more information (deactivated survey, day deactivated …)
+  - 2 (information) : show more information (deactivated survey, day deactivated …)
   - 3 (debug/trace) : request done, all individual email information
 - use [Yii::log](http://www.yiiframework.com/doc/guide/1.1/en/topics.logging) : 4 state : error, info and trace. Loggued as application.plugins.sendMailCron.
   - The log file is, by default ./tmp/runtime/application.log or ./application/runtime/application.log before LimeSurvey version 2.57.2
@@ -123,6 +123,7 @@ Translation can be done via [Glotpress of Sondages Pro plugin](http://translate.
 - Copyright © 2016-2020 Denis Chenu <http://sondages.pro> and [contributors](https://gitlab.com/SondagesPro/sendMailCron/graphs/master)
 - Copyright © 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com>
 - Copyright © 2016-2017 Extract Recherche Marketing <http://www.extractmarketing.com>
+- Copyright © 2020 Martina Hansens Hospital <http://mhh.no>
 - Licence : GNU Affero General Public License <https://www.gnu.org/licenses/gpl-3.0.html>
 
 ## Support
