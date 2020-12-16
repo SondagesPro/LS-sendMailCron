@@ -8,7 +8,7 @@
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> 
  * @copyright 2016-2018 Extract Recherche Marketing <https://dialogs.ca>
  * @license AGPL v3
- * @version 4.0.3
+ * @version 4.0.4-beta1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -204,6 +204,9 @@ class sendMailCron extends PluginBase
     */
     public function saveSettings($settings)
     {
+        if(!Permission::model()->hasGlobalPermission('settings','update')) {
+            throw new CHttpException(403);
+        }
         if(isset($settings['cronTypes']))
         {
             $cronTypes = preg_split('/\r\n|\r|\n|,|;/', $settings['cronTypes']);
@@ -222,6 +225,9 @@ class sendMailCron extends PluginBase
     */
     public function beforeActivate()
     {
+        if (!$this->getEvent()) {
+            throw new CHttpException(403);
+        }
         $event = $this->getEvent();
         if(is_null($this->getSetting('hostInfo')))
         {
@@ -246,6 +252,9 @@ class sendMailCron extends PluginBase
      */
     public function beforeSurveySettings()
     {
+        if (!$this->getEvent()) {
+            throw new CHttpException(403);
+        }
         $event = $this->event;
         // Must control if token table exist
         $iSurveyId=$event->get('survey');
@@ -274,6 +283,9 @@ class sendMailCron extends PluginBase
      * @return void
      */
     public function sendMailByCli() {
+        if (!(Yii::app() instanceof CConsoleApplication)) {
+            throw new CHttpException(403);
+        }
         if($this->event->get("target") != get_class()) {
             return;
         }
@@ -291,6 +303,9 @@ class sendMailCron extends PluginBase
      * @return void
      */
     public function sendMailByCron() {
+        if (!(Yii::app() instanceof CConsoleApplication)) {
+            throw new CHttpException(403);
+        }
         if($this->get('enableInCron',null,null,1) ) {
             $this->fixLsCommand();
             if(intval(Yii::app()->getConfig('versionnumber') < 4)) {
@@ -306,7 +321,7 @@ class sendMailCron extends PluginBase
      * The action of sending token emails for all survey
      * @return void
      */
-    public function sendTokenMessages()
+    private function sendTokenMessages()
     {
         $maxBatchSize=$this->getSetting('maxBatchSize',null,null,'');
 
@@ -626,6 +641,7 @@ class sendMailCron extends PluginBase
         $this->afterSendEmail($aCountMail, $iSurvey, $sType);
 
     }
+
     /**
      * Send emails for a survey and a type for LimeSurey 3 and lesser
      * @param int $iSurvey
@@ -989,6 +1005,7 @@ class sendMailCron extends PluginBase
         $oCriteria->params=$aParams;
         return $oCriteria;
     }
+
     /**
      * LimeSurvey 2.06 have issue with getPluginSettings->getPluginSettings (autoloader is broken) with command
      * Then use own function
@@ -1020,11 +1037,15 @@ class sendMailCron extends PluginBase
         else
             return $default;
     }
+
     /**
      * @see parent:getPluginSettings
      */
     public function getPluginSettings($getValues=true)
     {
+        if(!Permission::model()->hasGlobalPermission('settings','read')) {
+            throw new CHttpException(403);
+        }
         if(!Yii::app() instanceof CConsoleApplication)
         {
             $this->settings['hostInfo']['default']= Yii::app()->request->getHostInfo();
@@ -1117,7 +1138,7 @@ class sendMailCron extends PluginBase
      * @return array
      *
      */
-    public function getAttributesList($surveyId) {
+    private function getAttributesList($surveyId) {
         $oSurvey=Survey::model()->findByPk($surveyId);
         $aAvailableAttribute=array();
         $aTokensAttribute=$oSurvey->getTokenAttributes();
@@ -1142,7 +1163,7 @@ class sendMailCron extends PluginBase
      * @return void
      *
      */
-    public function setAttributeValue($surveyId) {
+    private function setAttributeValue($surveyId) {
         $allAttributes=TokenDynamic::model($surveyId)->getCustom_attributes();
 
         $this->surveyMaxEmailAttributes = null;
@@ -1185,7 +1206,7 @@ class sendMailCron extends PluginBase
      * @param string $sType
      * @return boolean true if disable send mail
      */
-    public function allowSendMailByAttribute($oToken,$sType='invite',$iSurvey)
+    private function allowSendMailByAttribute($oToken,$sType='invite',$iSurvey)
     {
         $sended=$oToken->remindercount + 1;
         if($this->surveyMaxEmailAttributes) {
@@ -1339,7 +1360,7 @@ class sendMailCron extends PluginBase
             throw new CHttpException(404,$this->translate("This survey does not seem to exist."));
         }
         if(!Permission::model()->hasSurveyPermission($surveyId,'surveysettings','update')){
-            throw new CHttpException(401);
+            throw new CHttpException(403);
         }
         if(App()->getRequest()->getPost('save'.get_class($this))) {
             $this->set('maxEmail', App()->getRequest()->getPost('maxEmail'), 'Survey', $surveyId);
