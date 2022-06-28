@@ -4,11 +4,11 @@
  * Need activate cron system in the server : php yourlimesurveydir/application/commands/console.php plugin cron --interval=X where X is interval in minutes
  *
  * @author Denis Chenu <denis@sondages.pro>
- * @copyright 2016-2020 Denis Chenu <https://www.sondages.pro>
+ * @copyright 2016-2022 Denis Chenu <https://www.sondages.pro>
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> 
  * @copyright 2016-2018 Extract Recherche Marketing <https://dialogs.ca>
  * @license AGPL v3
- * @version 4.0.4-beta1
+ * @version 4.1.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -538,7 +538,6 @@ class sendMailCron extends PluginBase
             $sSubject[$language]=preg_replace("/{TOKEN:([A-Z0-9_]+)}/","{"."$1"."}",$aSurveys[$language]["surveyls_email_{$sType}_subj"]);
             $sMessage[$language]=preg_replace("/{TOKEN:([A-Z0-9_]+)}/","{"."$1"."}",$aSurveys[$language]["surveyls_email_{$sType}"]);
         }
-
         $oCriteria = $this->getSendCriteria($iSurvey,$sType);
         if(empty($oCriteria)) {
             return;
@@ -904,8 +903,7 @@ class sendMailCron extends PluginBase
                 break;
         }
         Yii::log($sLog, $sLevel,'application.plugins.sendMailCron');
-        if($state <= $this->debug || $state==0)
-        {
+        if($state <= $this->debug || $state==0) {
             echo "[{$sNow}] {$sLogLog}\n";
         }
     }
@@ -1083,7 +1081,6 @@ class sendMailCron extends PluginBase
             if(substr($arg, 0, strlen("sendMailCronDisable="))=="sendMailCronDisable="){
                 $this->disable=boolval(substr($arg,strlen("sendMailCronDisable=")));
             }
-
             if(substr($arg, 0, strlen("sendMailCronType="))=="sendMailCronType="){
                 $cronType=trim(substr($arg,strlen("sendMailCronType=")));
                 $availCronTypes=$this->getSetting('cronTypes',null,null,"");
@@ -1375,7 +1372,20 @@ class sendMailCron extends PluginBase
             $this->set('delayInvitationAttribute', App()->getRequest()->getPost('delayInvitationAttribute'), 'Survey', $surveyId);
             $this->set('delayReminderAttribute', App()->getRequest()->getPost('delayReminderAttribute'), 'Survey', $surveyId);
             if(App()->getRequest()->getPost('save'.get_class($this))=='redirect') {
-                Yii::app()->getController()->redirect(Yii::app()->getController()->createUrl('admin/survey',array('sa'=>'view','surveyid'=>$surveyId)));
+                if (floatval(App()->getConfig('versionnumber')) < 4) {
+                    App()->getController()->redirect(
+                        App()->getController()->createUrl(
+                            'admin/survey',
+                            array('sa'=>'view','surveyid'=>$surveyId)
+                        )
+                    );
+                }
+                App()->getController()->redirect(
+                    App()->getController()->createUrl(
+                        'surveyAdministration/view',
+                        array('surveyid' => $surveyId)
+                    )
+                );
             }
         }
         /* get the default settings */
