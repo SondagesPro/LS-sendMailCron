@@ -7,7 +7,7 @@
         <lastUpdate>2020-09-22</lastUpdate>
         <author>Denis Chenu</author>
         <authorUrl>https://www.sondages.pro</authorUrl>
-        <version>4.1.1</version>
+        <version>4.1.2</version>
         <license>GNU Affero General Public License</license>
         <description><![CDATA[Allow to send token email by cron or sheduled task.]]></description>
     </metadata>

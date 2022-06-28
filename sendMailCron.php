@@ -8,7 +8,7 @@
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> 
  * @copyright 2016-2018 Extract Recherche Marketing <https://dialogs.ca>
  * @license AGPL v3
- * @version 4.1.1
+ * @version 4.1.2
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -324,7 +324,6 @@ class sendMailCron extends PluginBase
     private function sendTokenMessages()
     {
         $maxBatchSize=$this->getSetting('maxBatchSize',null,null,'');
-
         $oSurveys=Survey::model()->findAll(
             "active = 'Y' AND (startdate <= :now1 OR startdate IS NULL) AND (expires >= :now2 OR expires IS NULL)",
             array(
@@ -337,7 +336,7 @@ class sendMailCron extends PluginBase
         Yii::import('application.helpers.surveytranslator_helper', true);
         Yii::import('application.helpers.replacements_helper', true);
         Yii::import('application.helpers.expressions.em_manager_helper', true);
-        //print_r($urlManager);
+
         // Fix the url @todo parse url and validate
         Yii::app()->request->hostInfo = $this->getSetting("hostInfo");
         /* Issue with url manager and script … @todo : fix LimeSurvey core */
@@ -1642,6 +1641,7 @@ class sendMailCron extends PluginBase
                 Yii::app()->setConfig($configToFix,$configFixed[$configToFix]);
             }
         }
+        App()->session['adminlang'] = App()->getConfig("defaultlang");
     }
 
     /**
