@@ -592,8 +592,8 @@ class sendMailCron extends PluginBase
                 continue;
             }
             $mail = \LimeMailer::getInstance();
-            $mail->setTypeWithRaw($sType);
             $mail->setToken($oToken->token);
+            $mail->setTypeWithRaw($sType);            
             if($this->simulate) {
                 $this->sendMailCronLog("Simulate send : {$oToken->email} ({$oToken->tid}) for {$iSurvey}",3);
                 $success = true;
