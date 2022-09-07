@@ -35,7 +35,7 @@ Allow to send token email (invite or reminder) via PHP cli . This allow to use c
   - Same and more in each surveys setting
   - If plugin validate the email (this allow only one email by token)
   - The cron type list to be allowed in survey settings
-- To test the plugin you need to call it via PHP Cli `php yourlimesurveydir/application/commands/console.php plugin --target=sendMailCron sendMailCronSimulate=1`
+- To test the plugin you need to call it via PHP Cli `php yourlimesurveydir/application/commands/console.php plugin index --target=sendMailCron sendMailCronSimulate=1`
 - This line can be added in your crontab or Task Scheduler
 - Per survey settings are found on Tools menu
 
@@ -70,11 +70,11 @@ Some example
 
 You can use cron or direct event in PHP CLI.
 
-To use cron event withoput sending email : you have `enableInCron` settings or you can add `sendMailCronDisable` in arguments.
+To use cron event without sending email : you have `enableInCron` settings or you can add `sendMailCronDisable` in arguments.
 
-- `php yourlimesurveydir/application/commands/console.php plugin cron sendMailCronDebug=0` nothing is printed to screen except errors. By default show tested survey and action, and number of email send for each survey
-- `php yourlimesurveydir/application/commands/console.php plugin cron sendMailCronDebug=3 sendMailCronSimulate=1` just to see what happen before put the command in the crontab, with all the trace of the plugin
-- `php yourlimesurveydir/application/commands/console.php plugin --target=sendMailCron` (since LimeSurvey 2.63.0)
+- `php yourlimesurveydir/application/commands/console.php plugin cron sendMailCronDisable=1` nothing is printed to screen except errors. By default show tested survey and action, and number of email send for each survey
+- `php yourlimesurveydir/application/commands/console.php plugin index --target=sendMailCron sendMailCronDebug=3 sendMailCronSimulate=1` just to see what happen before put the command in the crontab, with all the trace of the plugin
+- `php yourlimesurveydir/application/commands/console.php plugin index --target=sendMailCron` (since LimeSurvey 2.63.0)
 
 ### Logging
 Plugin use 2 system for logging :
