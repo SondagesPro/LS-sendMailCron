@@ -10,7 +10,7 @@
  * @copyright 2016-2018 Extract Recherche Marketing <https://dialogs.ca>
  * @license AGPL v3
  *
- * @version 4.1.2
+ * @version 4.2.0
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -709,8 +709,7 @@ class sendMailCron extends PluginBase
                         $maxEmail = $this->getSetting('maxEmail', null, null, $this->settings['maxEmail']['default']);
                     }
                     if ($maxEmail < 1) {
-                        $this->sendMailCronLog("sendMailByCron for {$iSurvey} deactivated", 2);
-
+                        $this->sendMailCronLog("sendMailByCron for {$iSurvey} deactivated", 2, 'survey');
                         continue;
                     }
                     // By day of week
@@ -721,8 +720,7 @@ class sendMailCron extends PluginBase
                     }
                     $todayNum = (string) self::dateShifted(date('Y-m-d H:i:s'), 'N');
                     if (!empty($aDayOfWeekToSend) && !in_array($todayNum, $aDayOfWeekToSend)) {
-                        $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} for today", 2);
-
+                        $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} for today", 2, 'survey');
                         continue;
                     }
                     // By cron type
@@ -743,22 +741,19 @@ class sendMailCron extends PluginBase
                         $surveyCronTypes = array_intersect($surveyCronTypes, $availCronTypes);
                         if ($this->cronType) {
                             if (!in_array($this->cronType, $surveyCronTypes)) {
-                                $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} for this cron type ({$this->cronType})", 2);
-
+                                $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} for this cron type ({$this->cronType})", 2, 'survey');
                                 continue;
                             }
                         } else {
                             if (!empty($surveyCronTypes)) {
-                                $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} for no cron type", 2);
-
+                                $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} for no cron type", 2, 'survey');
                                 continue;
                             }
                         }
                     }
-                    $this->sendMailCronLog("Start sendMailByCron for {$iSurvey}", 1);
+                    $this->sendMailCronLog("Start sendMailByCron for {$iSurvey}", 1, 'survey');
                     if ($maxBatchSize && $maxBatchSize <= $this->currentBatchSize) {
-                        $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} due to batch size", 1);
-
+                        $this->sendMailCronLog("sendMailByCron deactivated for {$iSurvey} due to batch size", 1, 'survey');
                         continue;
                     }
 
@@ -776,10 +771,10 @@ class sendMailCron extends PluginBase
                         ) {
                             $this->sendEmails($iSurvey, 'remind');
                         } else {
-                            $this->sendMailCronLog("sendMailByCron reminder deactivated for {$iSurvey} due to survey batch size", 1);
+                            $this->sendMailCronLog("sendMailByCron reminder deactivated for {$iSurvey} due to survey batch size", 1, 'survey');
                         }
                     } else {
-                        $this->sendMailCronLog("sendMailByCron reminder deactivated for {$iSurvey} due to batch size", 1);
+                        $this->sendMailCronLog("sendMailByCron reminder deactivated for {$iSurvey} due to batch size", 1, 'survey');
                     }
 
                     $event = new PluginEvent('finishSendEmailForSurveyCron');
@@ -903,7 +898,7 @@ class sendMailCron extends PluginBase
         if ($reminderOnlyTo && $isNotAnonymous) {
             $controlResponse = $reminderOnlyTo;
         }
-        $this->sendMailCronLog("Start sending {$sType}", 2);
+        $this->sendMailCronLog("Start sending {$sType}", 2, 'survey');
         $mail = \LimeMailer::getInstance(\LimeMailer::ResetComplete);
         $mail->setSurvey($iSurvey);
         $mail->emailType = $sType;
@@ -914,22 +909,19 @@ class sendMailCron extends PluginBase
             // Test actual sended
             if ($this->stopSendMailAction($aCountMail, $iSurvey, $sType)) {
                 $this->afterSendEmail($aCountMail, $iSurvey, $sType);
-
                 return;
             }
             // Find if need to already started or not
             if ($controlResponse) {
                 $oResponse = SurveyDynamic::model($iSurvey)->find('token=:token', [':token' => $oToken->token]);
                 if (!$oResponse && 'notstarted' == $controlResponse) {
-                    $this->sendMailCronLog("Not started survey : {$oToken->email} ({$oToken->tid}) for {$iSurvey}", 3);
+                    $this->sendMailCronLog("Not started survey : {$oToken->email} ({$oToken->tid}) for {$iSurvey}", 3, 'token');
                     ++$aCountMail['notstarted'];
-
                     continue;
                 }
                 if ($oResponse && 'started' == $controlResponse) {
-                    $this->sendMailCronLog("Already started survey : {$oToken->email} ({$oToken->tid}) for {$iSurvey}", 3);
+                    $this->sendMailCronLog("Already started survey : {$oToken->email} ({$oToken->tid}) for {$iSurvey}", 3, 'token');
                     ++$aCountMail['started'];
-
                     continue;
                 }
             }
@@ -937,7 +929,7 @@ class sendMailCron extends PluginBase
                 $this->getSetting('validateEmail', null, null, $this->settings['validateEmail']['default'])
                 && !filter_var(trim($oToken->email), FILTER_VALIDATE_EMAIL)
             ) {
-                $this->sendMailCronLog("invalid email : '{$oToken->email}' ({$oToken->tid}) for {$iSurvey}", 2);
+                $this->sendMailCronLog("invalid email : '{$oToken->email}' ({$oToken->tid}) for {$iSurvey}", 2, 'token');
                 ++$aCountMail['invalid'];
                 $oCommand = Yii::app()->db->createCommand();
                 $oCommand->update(
@@ -950,17 +942,16 @@ class sendMailCron extends PluginBase
                         ':tid' => $iToken->tid,
                     ]
                 );
-
                 continue;
             }
             $mail = \LimeMailer::getInstance();
             $mail->setToken($oToken->token);
             $mail->setTypeWithRaw($sType);
             if ($this->simulate) {
-                $this->sendMailCronLog("Simulate send : {$oToken->email} ({$oToken->tid}) for {$iSurvey}", 3);
+                $this->sendMailCronLog("Simulate send : {$oToken->email} ({$oToken->tid}) for {$iSurvey}", 3, 'token');
                 $success = true;
             } else {
-                $this->sendMailCronLog("Send : {$oToken->email} ({$oToken->tid}) for {$iSurvey}", 3);
+                $this->sendMailCronLog("Send : {$oToken->email} ({$oToken->tid}) for {$iSurvey}", 3, 'token');
                 $success = $mail->sendMessage();
             }
             // action if email is sent
@@ -986,19 +977,19 @@ class sendMailCron extends PluginBase
                 if ($this->simulate) {
                     $txtLog .= ' (simulation)';
                 }
-                $this->sendMailCronLog("Email {$oToken->email} : {$txtLog}", 3);
+                $this->sendMailCronLog("Email {$oToken->email} : {$txtLog}", 3, 'token');
                 if (!$this->simulate) {
                     if (!$oToken->encryptSave(true)) {
                         $error = CVarDumper::dumpAsString($oToken->getErrors(), 3, false);
-                        $this->sendMailCronLog("Email {$oToken->email} error: {$error}", 1);
+                        $this->sendMailCronLog("Email {$oToken->email} error: {$error}", 1, 'token');
                     }
                 }
             } else {
                 $maildebug = $mail->getDebug();
                 if ($maildebug) {
-                    $this->sendMailCronLog("Unknow error when send email to {$oToken->email} ({$iSurvey}) : " . print_r($maildebug, 1), 0);
+                    $this->sendMailCronLog("Unknow error when send email to {$oToken->email} ({$iSurvey}) : " . print_r($maildebug, 1), 0, 'token');
                 } else {
-                    $this->sendMailCronLog("Unknow error when send email to {$oToken->email} ({$iSurvey})", 0);
+                    $this->sendMailCronLog("Unknow error when send email to {$oToken->email} ({$iSurvey})", 0, 'token');
                 }
                 ++$aCountMail['error'];
             }
@@ -1014,6 +1005,8 @@ class sendMailCron extends PluginBase
      */
     private function sendEmailsApi3($iSurvey, $sType = 'invite')
     {
+        /* smtpdebug break with 3.X */
+        App()->setConfig('emailsmtpdebug', 0);
         // For the log
         $aCountMail = [
             'total' => 0,
@@ -1081,7 +1074,7 @@ class sendMailCron extends PluginBase
         if ($reminderOnlyTo && $isNotAnonymous) {
             $controlResponse = $reminderOnlyTo;
         }
-        $this->sendMailCronLog("Start sending {$sType}", 2);
+        $this->sendMailCronLog("Start sending {$sType}", 2, 'survey');
         foreach ($oTokens as $oToken) {
             // Test actual sended
             if ($this->stopSendMailAction($aCountMail, $iSurvey, $sType)) {
@@ -1093,13 +1086,13 @@ class sendMailCron extends PluginBase
             if ($controlResponse) {
                 $oResponse = SurveyDynamic::model($iSurvey)->find('token=:token', [':token' => $oToken->token]);
                 if (!$oResponse && 'notstarted' == $controlResponse) {
-                    $this->sendMailCronLog("Not started survey : {$oToken->email} ({$oToken->tid}) for {$iSurvey}", 3);
+                    $this->sendMailCronLog("Not started survey : {$oToken->email} ({$oToken->tid}) for {$iSurvey}", 3, 'token');
                     ++$aCountMail['notstarted'];
 
                     continue;
                 }
                 if ($oResponse && 'started' == $controlResponse) {
-                    $this->sendMailCronLog("Already started survey : {$oToken->email} ({$oToken->tid}) for {$iSurvey}", 3);
+                    $this->sendMailCronLog("Already started survey : {$oToken->email} ({$oToken->tid}) for {$iSurvey}", 3, 'token');
                     ++$aCountMail['started'];
 
                     continue;
@@ -1114,7 +1107,7 @@ class sendMailCron extends PluginBase
                 $this->getSetting('validateEmail', null, null, $this->settings['validateEmail']['default'])
                 && !filter_var(trim($oToken->email), FILTER_VALIDATE_EMAIL)
             ) {
-                $this->sendMailCronLog("invalid email : '{$oToken->email}' ({$oToken->tid}) for {$iSurvey}", 2);
+                $this->sendMailCronLog("invalid email : '{$oToken->email}' ({$oToken->tid}) for {$iSurvey}", 2, 'token');
                 ++$aCountMail['invalid'];
                 $oCommand = Yii::app()->db->createCommand();
                 $oCommand->update(
@@ -1128,7 +1121,7 @@ class sendMailCron extends PluginBase
 
                 continue;
             }
-            $this->sendMailCronLog("Send : {$oToken->email} ({$oToken->tid}) for {$iSurvey}", 3);
+            $this->sendMailCronLog("Send : {$oToken->email} ({$oToken->tid}) for {$iSurvey}", 3, 'token');
             $sLanguage = trim($oToken->language);
             if (!in_array($sLanguage, $aSurveyLangs)) {
                 $sLanguage = $sBaseLanguage;
@@ -1240,22 +1233,17 @@ class sendMailCron extends PluginBase
                         $txtLog = 'remindersent set to ' . $oToken->remindersent . ' count:' . $oToken->remindercount;
                     }
                     if ($oToken->save()) {
-                        $this->sendMailCronLog("Email {$oToken->email} : {$txtLog}", 3);
+                        $this->sendMailCronLog("Email {$oToken->email} : {$txtLog}", 3, 'token');
                     } else {
                         $error = CVarDumper::dumpAsString($oToken->getErrors(), 3, false);
-                        $this->sendMailCronLog("Email {$oToken->email} error: {$error}", 1);
+                        $this->sendMailCronLog("Email {$oToken->email} error: {$error}", 1, 'token');
                     }
                 }
             } else {
-                if ($maildebug) {
-                    $this->sendMailCronLog("Unknow error when send email to {$oToken->email} ({$iSurvey}) : " . $maildebug, 0);
-                } else {
-                    $this->sendMailCronLog("Unknow error when send email to {$oToken->email} ({$iSurvey})", 0);
-                }
+                $this->sendMailCronLog("Error when send email to {$oToken->email} ({$iSurvey})", 0, 'token');
                 ++$aCountMail['error'];
             }
         }
-
         $this->afterSendEmail($aCountMail, $iSurvey, $sType);
     }
 
@@ -1263,40 +1251,33 @@ class sendMailCron extends PluginBase
      * log an event.
      *
      * @param string $sLog
-     * @param int    $state
-     *                      retrun @void
+     * @param int $state error type, differnt usage for Yii log and CLI return (0: ERROR(error), 1 INFO (warning), 2 DEBUG (info), 3 TRACE (trace))
+     * @param string $detail 
+     * retrun @void
      */
-    private function sendMailCronLog($sLog, $state = 0)
+    private function sendMailCronLog($sLog, $state = 0, $detail = "none")
     {
         // Play with DEBUG : ERROR/LOG/DEBUG
         $sNow = date(DATE_ATOM);
-
         switch ($state) {
             case 0:
                 $sLevel = 'error';
                 $sLogLog = "[ERROR] {$sLog}";
-
                 break;
-
             case 1:
-                $sLevel = 'info';
+                $sLevel = 'warning';
                 $sLogLog = "[INFO] {$sLog}";
-
                 break;
-
             case 2:
                 $sLevel = 'info';
                 $sLogLog = "[DEBUG] {$sLog}";
-
                 break;
-
             default:
                 $sLevel = 'trace';
                 $sLogLog = "[TRACE] {$sLog}";
-
                 break;
         }
-        Yii::log($sLog, $sLevel, 'application.plugins.sendMailCron');
+        Yii::log($sLog, $sLevel, 'application.plugins.sendMailCron.' . $detail);
         if ($state <= $this->debug || 0 == $state) {
             echo "[{$sNow}] {$sLogLog}\n";
         }
@@ -1325,12 +1306,12 @@ class sendMailCron extends PluginBase
         $maxReminder = intval($maxReminder);
         --$maxReminder;
         if ('invite' == $sType && $maxReminder < 0) {
-            $this->sendMailCronLog("Survey {$iSurvey}, {$sType} deactivated", 2);
+            $this->sendMailCronLog("Survey {$iSurvey}, {$sType} deactivated", 3, 'getSendCriteria');
 
             return;
         }
         if ('remind' == $sType && $maxReminder < 1) {
-            $this->sendMailCronLog("Survey {$iSurvey}, {$sType} deactivated", 2);
+            $this->sendMailCronLog("Survey {$iSurvey}, {$sType} deactivated", 3, 'getSendCriteria');
 
             return;
         }
@@ -1345,8 +1326,7 @@ class sendMailCron extends PluginBase
         }
         $dayDelayReminder = intval($dayDelayReminder);
         if ('remind' == $sType && ($delayInvitation < 1 || $dayDelayReminder < 1)) {
-            $this->sendMailCronLog("Survey {$iSurvey}, {$sType} deactivated due to bad value in delays", 1);
-
+            $this->sendMailCronLog("Survey {$iSurvey}, {$sType} deactivated due to bad value in delays", 1, 'getSendCriteria');
             return;
         }
         // ~ if ($sType=='invite')
@@ -1357,7 +1337,7 @@ class sendMailCron extends PluginBase
         }
 
         $dTomorrow = self::dateShifted(date('Y-m-d H:i', time() + 86400)); // Tomorrow for validuntil
-        $this->sendMailCronLog("Survey {$iSurvey}, {$sType} Valid from {$dFrom} And Valid until {$dTomorrow} (or NULL)", 3);
+        $this->sendMailCronLog("Survey {$iSurvey}, {$sType} Valid from {$dFrom} And Valid until {$dTomorrow} (or NULL)", 3, 'getSendCriteria');
         $oCriteria = new CDbCriteria();
         // Always needed condition
         $oCriteria->addCondition("emailstatus = 'OK'");
@@ -1376,9 +1356,7 @@ class sendMailCron extends PluginBase
             case 'invite':
                 // Not sent condition
                 $oCriteria->addCondition("(sent = 'N' OR sent = '' OR sent IS NULL)");
-
                 break;
-
             case 'remind':
                 // sent condition
                 $oCriteria->addCondition("(sent != 'N' AND sent != '' AND sent IS NOT NULL)");
@@ -1395,17 +1373,13 @@ class sendMailCron extends PluginBase
                     ':sent' => strval($dAfterSent),
                     ':remindercount' => $maxReminder,
                 ]);
-
                 break;
-
             default:
                 // Break for invalid
                 throw new Exception("Invalid email type {$sType} in sendMailCron.");
-
                 return 1;
         }
         $oCriteria->params = $aParams;
-
         return $oCriteria;
     }
 
@@ -1468,7 +1442,7 @@ class sendMailCron extends PluginBase
                 $availCronTypes = $this->getSetting('cronTypes', null, null, '');
                 $availCronTypes = explode('|', $availCronTypes);
                 if ($cronType && !in_array($cronType, $availCronTypes)) {
-                    $this->sendMailCronLog("invalid cronType : {$cronType}, plugin is disable", 1);
+                    $this->sendMailCronLog("invalid cronType : {$cronType}, plugin is disable", 1, 'command');
                     $this->disable = true;
                 } else {
                     $this->cronType = $cronType;
@@ -1491,7 +1465,7 @@ class sendMailCron extends PluginBase
         $maxThisType = $this->getSetting('maxSurveyBatchSize_' . $sType, 'survey', $iSurvey, '');
         if ('' !== $maxThisType && $aCountMail['sent'] >= $maxThisType) {
             $stillToSend = $aCountMail['total'] * 2 - array_sum($aCountMail);
-            $this->sendMailCronLog("Survey {$iSurvey}, {$sType} survey batch size achieved. {$stillToSend} email to send at next batch.", 1);
+            $this->sendMailCronLog("Survey {$iSurvey}, {$sType} survey batch size achieved. {$stillToSend} email to send at next batch.", 1, 'stop');
             $this->sendMailCronFinalLog($aCountMail);
 
             return true;
@@ -1499,7 +1473,7 @@ class sendMailCron extends PluginBase
 
         if ($this->getSetting('maxBatchSize') && $this->getSetting('maxBatchSize') <= $this->currentBatchSize) {
             $stillToSend = $aCountMail['total'] * 2 - array_sum($aCountMail);
-            $this->sendMailCronLog("Batch size achieved for {$iSurvey} during {$sType}. {$stillToSend} email to send at next batch.", 1);
+            $this->sendMailCronLog("Batch size achieved for {$iSurvey} during {$sType}. {$stillToSend} email to send at next batch.", 1, 'stop');
             $this->sendMailCronFinalLog($aCountMail);
 
             return true;
@@ -1507,7 +1481,7 @@ class sendMailCron extends PluginBase
 
         if ($this->getSetting('maxSurveyBatchSize', 'Survey', $iSurvey) && $this->getSetting('maxSurveyBatchSize', 'Survey', $iSurvey) <= $this->currentSurveyBatchSize) {
             $stillToSend = $aCountMail['total'] * 2 - array_sum($aCountMail);
-            $this->sendMailCronLog("Batch survey size achieved for {$iSurvey} during {$sType}. {$stillToSend} email to send at next batch.", 1);
+            $this->sendMailCronLog("Batch survey size achieved for {$iSurvey} during {$sType}. {$stillToSend} email to send at next batch.", 1, 'stop');
             $this->sendMailCronFinalLog($aCountMail);
 
             return true;
@@ -1604,13 +1578,13 @@ class sendMailCron extends PluginBase
             $attribute = $this->surveyMaxEmailAttributes;
             $value = trim($oToken->{$attribute});
             if ($value && !ctype_digit($value)) {
-                $this->sendMailCronLog("Max email by attribute {$attribute} (disabled): {$oToken->email} ({$oToken->{$attribute}}) for {$iSurvey}", 3);
+                $this->sendMailCronLog("Max email by attribute {$attribute} (disabled): {$oToken->email} ({$oToken->{$attribute}}) for {$iSurvey}", 3, 'attribute');
 
                 return false;
             }
             if (strval(intval($value)) == strval($value)) {
                 if (intval($value) <= $sended) {
-                    $this->sendMailCronLog("Max email by attribute {$attribute} (done): {$oToken->email} ({$oToken->{$attribute}}) for {$iSurvey}", 3);
+                    $this->sendMailCronLog("Max email by attribute {$attribute} (done): {$oToken->email} ({$oToken->{$attribute}}) for {$iSurvey}", 3, 'attribute');
 
                     return false;
                 }
@@ -1632,16 +1606,14 @@ class sendMailCron extends PluginBase
             $attribute = $this->surveyDelayInvitationAttribute;
             $value = trim($oToken->{$attribute});
             if ($value && !ctype_digit($value)) {
-                $this->sendMailCronLog("Delay after invitation by attribute {$attribute} (disabled): {$oToken->email} ({$oToken->{$attribute}}) for {$iSurvey}", 3);
-
+                $this->sendMailCronLog("Delay after invitation by attribute {$attribute} (disabled): {$oToken->email} ({$oToken->{$attribute}}) for {$iSurvey}", 3, 'attribute');
                 return false;
             }
             if (strval(intval($value)) == strval($value)) {
                 $value = intval($value);
                 if ($value > $dayDiff) {
                     $waiting = $value - $dayDiff;
-                    $this->sendMailCronLog("Delay after invitation by attribute {$attribute} (wait {$waiting} day(s)): {$oToken->email} ({$oToken->{$attribute}}) for {$iSurvey}", 3);
-
+                    $this->sendMailCronLog("Delay after invitation by attribute {$attribute} (wait {$waiting} day(s)): {$oToken->email} ({$oToken->{$attribute}}) for {$iSurvey}", 3, 'attribute');
                     return false;
                 }
             }
@@ -1650,16 +1622,14 @@ class sendMailCron extends PluginBase
             $attribute = $this->surveyDelayReminderAttribute;
             $value = trim($oToken->{$attribute});
             if ($value && !ctype_digit($value)) {
-                $this->sendMailCronLog("Delay between reminders by attribute {$attribute} (disabled): {$oToken->email} ({$oToken->{$attribute}}) for {$iSurvey}", 3);
-
+                $this->sendMailCronLog("Delay between reminders by attribute {$attribute} (disabled): {$oToken->email} ({$oToken->{$attribute}}) for {$iSurvey}", 3, 'attribute');
                 return false;
             }
             if (strval(intval($value)) == strval($value)) {
                 $value = intval($value);
                 if ($value > $dayDiff) {
                     $waiting = $value - $dayDiff;
-                    $this->sendMailCronLog("Delay between reminders by attribute {$attribute} (wait {$waiting} day(s)): {$oToken->email} ({$oToken->{$attribute}}) for {$iSurvey}", 3);
-
+                    $this->sendMailCronLog("Delay between reminders by attribute {$attribute} (wait {$waiting} day(s)): {$oToken->email} ({$oToken->{$attribute}}) for {$iSurvey}", 3, 'attribute');
                     return false;
                 }
             }
@@ -1678,25 +1648,25 @@ class sendMailCron extends PluginBase
     private function sendMailCronFinalLog($aCountMail)
     {
         if ((array_sum($aCountMail) - $aCountMail['total']) == 0) {
-            $this->sendMailCronLog('No message to sent', 1);
+            $this->sendMailCronLog('No message to sent', 1, 'finalog');
         } else {
             if ($aCountMail['sent']) {
-                $this->sendMailCronLog("{$aCountMail['sent']} messages sent", 1);
+                $this->sendMailCronLog("{$aCountMail['sent']} messages sent", 1, 'finalog');
             }
             if ($aCountMail['invalid']) {
-                $this->sendMailCronLog("{$aCountMail['invalid']} invalid email address", 1);
+                $this->sendMailCronLog("{$aCountMail['invalid']} invalid email address", 1, 'finalog');
             }
             if ($aCountMail['started']) {
-                $this->sendMailCronLog("{$aCountMail['started']} already started survey", 1);
+                $this->sendMailCronLog("{$aCountMail['started']} already started survey", 1, 'finalog');
             }
             if ($aCountMail['notstarted']) {
-                $this->sendMailCronLog("{$aCountMail['started']} not started survey", 1);
+                $this->sendMailCronLog("{$aCountMail['started']} not started survey", 1, 'finalog');
             }
             if ($aCountMail['attributedisabled']) {
-                $this->sendMailCronLog("{$aCountMail['attributedisabled']} disable by attribute", 1);
+                $this->sendMailCronLog("{$aCountMail['attributedisabled']} disable by attribute", 1, 'finalog');
             }
             if ($aCountMail['error']) {
-                $this->sendMailCronLog("{$aCountMail['error']} messages with error", 1);
+                $this->sendMailCronLog("{$aCountMail['error']} messages with error", 1, 'finalog');
             }
         }
     }
