@@ -10,7 +10,7 @@
  * @copyright 2016-2018 Extract Recherche Marketing <https://dialogs.ca>
  * @license AGPL v3
  *
- * @version 4.3.0
+ * @version 4.3.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -944,9 +944,12 @@ class sendMailCron extends PluginBase
                     ],
                     'tid=:tid',
                     [
-                        ':tid' => $iToken->tid,
+                        ':tid' => $oToken->tid,
                     ]
                 );
+                $oCriteria = clone $baseCriteria;
+                $oCriteria->compare('tid', ">{$oToken->tid}");
+                $oToken = Token::model($iSurvey)->find($oCriteria);
                 continue;
             }
             $mail = \LimeMailer::getInstance();
