@@ -8,7 +8,7 @@
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com> 
  * @copyright 2016-2018 Extract Recherche Marketing <https://dialogs.ca>
  * @license AGPL v3
- * @version 3.2.2
+ * @version 3.2.3
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -1304,13 +1304,13 @@ class sendMailCron extends PluginBase
                 ),
                 'label'=>$this->_translate("Day of week for sending email"),
                 'options'=>array(
-                    1=>$this->_translate("Monday"),
-                    2=>$this->_translate("Thursday"),
-                    3=>$this->_translate("Wednesday"),
-                    4=>$this->_translate("Thuesday"),
-                    5=>$this->_translate("Friday"),
-                    6=>$this->_translate("Saturday"),
-                    7=>$this->_translate("Sunday"),
+                    1 => $this->_translate('Monday'),
+                    2 => $this->_translate('Thuesday'),
+                    3 => $this->_translate('Wednesday'),
+                    4 => $this->_translate('Thursday'),
+                    5 => $this->_translate('Friday'),
+                    6 => $this->_translate('Saturday'),
+                    7 => $this->_translate('Sunday'),
                 ),
                 'current'=>$this->get('dayOfWeekToSend', 'Survey', $surveyId,array()),
             ),
