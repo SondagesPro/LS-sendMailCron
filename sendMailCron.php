@@ -10,7 +10,7 @@
  * @copyright 2016-2018 Extract Recherche Marketing <https://dialogs.ca>
  * @license AGPL v3
  *
- * @version 4.3.1
+ * @version 4.3.2
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -544,9 +544,9 @@ class sendMailCron extends PluginBase
                 'label' => $this->translate('Day of week for sending email'),
                 'options' => [
                     1 => $this->translate('Monday'),
-                    2 => $this->translate('Thursday'),
+                    2 => $this->translate('Thuesday'),
                     3 => $this->translate('Wednesday'),
-                    4 => $this->translate('Thuesday'),
+                    4 => $this->translate('Thursday'),
                     5 => $this->translate('Friday'),
                     6 => $this->translate('Saturday'),
                     7 => $this->translate('Sunday'),

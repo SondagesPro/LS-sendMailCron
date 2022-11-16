@@ -4,10 +4,10 @@
         <name>sendMailCron</name>
         <type>plugin</type>
         <creationDate>2016-08-04</creationDate>
-        <lastUpdate>2020-09-22</lastUpdate>
+        <lastUpdate>2022-11-16</lastUpdate>
         <author>Denis Chenu</author>
         <authorUrl>https://www.sondages.pro</authorUrl>
-        <version>4.3.1</version>
+        <version>4.3.2</version>
         <license>GNU Affero General Public License</license>
         <description><![CDATA[Allow to send token email by cron or sheduled task.]]></description>
     </metadata>
