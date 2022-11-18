@@ -544,7 +544,7 @@ class sendMailCron extends PluginBase
                 'label' => $this->translate('Day of week for sending email'),
                 'options' => [
                     1 => $this->translate('Monday'),
-                    2 => $this->translate('Thuesday'),
+                    2 => $this->translate('Tuesday'),
                     3 => $this->translate('Wednesday'),
                     4 => $this->translate('Thursday'),
                     5 => $this->translate('Friday'),
