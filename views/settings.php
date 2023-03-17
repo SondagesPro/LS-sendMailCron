@@ -41,7 +41,11 @@
         echo " ";
         echo CHtml::htmlButton('<i class="fa fa-check-circle-o " aria-hidden="true"></i> '.gT('Save and close'), array('type'=>'submit','name'=>'save'.$pluginClass,'value'=>'redirect','class'=>'btn btn-default'));
         echo " ";
-        echo CHtml::link(gT('Close'), Yii::app()->createUrl('admin/survey', array('sa'=>'view','surveyid'=>$surveyId)), array('class'=>'btn btn-danger'));
+        echo CHtml::link(
+            gT('Close'),
+            (floatval(App()->getConfig('versionnumber')) < 4) ? App()->createUrl('admin/survey', array('sa'=>'view','surveyid'=>$surveyId)) : App()->createUrl('surveyAdministration/view', array('surveyid'=>$surveyId)),
+            array('class'=>'btn btn-danger')
+        );
         ?>
           </div>
         </div>
