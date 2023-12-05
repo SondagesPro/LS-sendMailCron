@@ -29,6 +29,11 @@ class sendMailCron extends PluginBase
     protected static $description = 'Allow to send token email by cron or sheduled task';
     protected static $name = 'sendMailCron';
 
+    /** @inheritdoc */
+    public $allowedPublicMethods = [
+        'actionSettings'
+    ];
+
     /**
      * @var array[] the settings
      */
@@ -56,7 +61,7 @@ class sendMailCron extends PluginBase
                 'min' => 1,
             ],
             'label' => 'Max email to send globally (max batch size).',
-            'help' => 'Leave empty to send all available email on each cron',
+            'help' => 'Leave empty to send all available email on each cron. Can be used if you need to limit the number of email sent by day for example.',
             'default' => '',
         ],
         'hostInfo' => [
@@ -356,7 +361,6 @@ class sendMailCron extends PluginBase
         if (!Yii::app() instanceof CConsoleApplication) {
             $this->settings['hostInfo']['default'] = Yii::app()->request->getHostInfo();
             $this->settings['baseUrl']['default'] = Yii::app()->request->getBaseUrl();
-            $this->settings['scriptUrl']['default'] = Yii::app()->request->getScriptUrl();
         }
         $pluginSettings = parent::getPluginSettings($getValues);
         if (intval(Yii::app()->getConfig('versionnumber') >= 4)) {
@@ -473,6 +477,7 @@ class sendMailCron extends PluginBase
                 'type' => 'int',
                 'htmlOptions' => [
                     'min' => 0,
+                    'placeholder' => $defaultMaxEmail,
                 ],
                 'label' => $this->translate('Max email to send (invitation + remind) to each participant.'),
                 'help' => sprintf($this->translate('0 to deactivate sending of email, empty to use default (%s)'), $defaultMaxEmail),
@@ -482,6 +487,7 @@ class sendMailCron extends PluginBase
                 'type' => 'int',
                 'htmlOptions' => [
                     'min' => 1,
+                    'placeholder' => $defaultDelayInvitation,
                 ],
                 'label' => $this->translate('Min delay between invitation and first reminder.'),
                 'help' => sprintf($this->translate('In days, empty for default (%s)'), $defaultDelayInvitation),
@@ -491,6 +497,7 @@ class sendMailCron extends PluginBase
                 'type' => 'int',
                 'htmlOptions' => [
                     'min' => 1,
+                    'placeholder' => $defaultDelayReminder,
                 ],
                 'label' => $this->translate('Min delay between reminders.'),
                 'help' => sprintf($this->translate('In days, empty for default (%s)'), $defaultDelayReminder),
@@ -694,9 +701,9 @@ class sendMailCron extends PluginBase
         Yii::import('application.helpers.expressions.em_manager_helper', true);
 
         // Fix the url @todo parse url and validate
-        Yii::app()->request->hostInfo = $this->getSetting('hostInfo');
+        App()->request->hostInfo = $this->getSetting('hostInfo');
         // Issue with url manager and script … @todo : fix LimeSurvey core
-        $baseUrl = dirname(trim($this->getSetting('baseUrl')));
+        $baseUrl = trim($this->getSetting('baseUrl'));
         if (Yii::app()->getUrlManager()->showScriptName) {
             $baseUrl = $baseUrl . '/index.php';
         }

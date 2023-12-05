@@ -7,7 +7,7 @@
           <?php
               echo CHtml::htmlButton('<i class="fa fa-check" aria-hidden="true"></i> '.gT('Save'), array('type'=>'submit','name'=>'save'.$pluginClass,'value'=>'save','class'=>'btn btn-primary'));
         echo " ";
-        echo CHtml::htmlButton('<i class="fa fa-check-circle-o " aria-hidden="true"></i> '.gT('Save and close'), array('type'=>'submit','name'=>'save'.$pluginClass,'value'=>'redirect','class'=>'btn btn-default'));
+        echo CHtml::htmlButton('<i class="fa fa-check-circle-o " aria-hidden="true"></i> '.gT('Save and close'), array('type'=>'submit','name'=>'save'.$pluginClass,'value'=>'redirect','class'=>'btn btn-default btn-secondary'));
         echo " ";
         echo CHtml::link(
             gT('Close'),
@@ -35,11 +35,12 @@
               ));
         } ?>
         <div class='row'>
-          <div class='col-md-offset-6 submit-buttons'>
+          <div class="col-md-6"></div>
+          <div class='col-md-6 submit-buttons'>
             <?php
               echo CHtml::htmlButton('<i class="fa fa-check" aria-hidden="true"></i> '.gT('Save'), array('type'=>'submit','name'=>'save'.$pluginClass,'value'=>'save','class'=>'btn btn-primary'));
         echo " ";
-        echo CHtml::htmlButton('<i class="fa fa-check-circle-o " aria-hidden="true"></i> '.gT('Save and close'), array('type'=>'submit','name'=>'save'.$pluginClass,'value'=>'redirect','class'=>'btn btn-default'));
+        echo CHtml::htmlButton('<i class="fa fa-check-circle-o " aria-hidden="true"></i> '.gT('Save and close'), array('type'=>'submit','name'=>'save'.$pluginClass,'value'=>'redirect','class'=>'btn btn-default btn-secondary'));
         echo " ";
         echo CHtml::link(
             gT('Close'),
