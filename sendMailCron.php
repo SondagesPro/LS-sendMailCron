@@ -5,12 +5,12 @@
  * Need activate cron system in the server : php yourlimesurveydir/application/commands/console.php plugin cron --interval=X where X is interval in minutes.
  *
  * @author Denis Chenu <denis@sondages.pro>
- * @copyright 2016-2022 Denis Chenu <https://www.sondages.pro>
+ * @copyright 2016-2023 Denis Chenu <https://www.sondages.pro>
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com>
  * @copyright 2016-2018 Extract Recherche Marketing <https://dialogs.ca>
  * @license AGPL v3
  *
- * @version 4.3.2
+ * @version 4.4.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -42,7 +42,7 @@ class sendMailCron extends PluginBase
             'type' => 'info',
             'content' => '<div class="well">'
                     . '<p>You need activate cron system in the server : <code>php yourlimesurveydir/application/commands/console.php plugin index --target=sendMailCron</code>.</p>'
-                    . '<p>You can check if plugin work like you want with : <code>php yourlimesurveydir/application/commands/console.php plugin index --target=sendMailCron</code>.</p>'
+                    . '<p>You can check if plugin work like you want with : <code>php yourlimesurveydir/application/commands/console.php plugin index --target=sendMailCron  sendMailCronDebug=3 sendMailCronSimulate=1</code>.</p>'
                     . '</div>',
         ],
         'enableInCron' => [
@@ -115,6 +115,7 @@ class sendMailCron extends PluginBase
                 'min' => 1,
             ],
             'label' => 'Default token attribute to use for max email to send (invitation + remind).',
+            'help' => 'If this attribute exist (number) : tested just before sending, compare with remindercount+1.',
             'default' => '',
         ],
         'delayInvitationAttribute' => [
@@ -123,7 +124,7 @@ class sendMailCron extends PluginBase
                 'min' => 1,
             ],
             'label' => 'Default token attribute to use for minimum delay between invitation and first reminder.',
-            'help' => 'If this attribute exist : tested just before sending, then final delay is minimum between global and this attribute',
+            'help' => 'If this attribute exist (number) : tested just before sending, then final delay is minimum between global and this attribute',
             'default' => '',
         ],
         'delayReminderAttribute' => [
@@ -132,7 +133,7 @@ class sendMailCron extends PluginBase
                 'min' => 1,
             ],
             'label' => 'Default token attribute to use for minimum delay between each reminders.',
-            'help' => 'If this attribute exist : tested just before sending, then final delay is minimum between global and this attribute',
+            'help' => 'If this attribute exist (number) : tested just before sending, then final delay is minimum between global and this attribute',
             'default' => '',
         ],
         'cronTypes' => [
@@ -988,16 +989,13 @@ class sendMailCron extends PluginBase
                 }
                 if ('remind' == $sType) {
                     $oToken->remindersent = self::dateShifted(date('Y-m-d H:i:s'));
-                    if (!$this->simulate) {
-                        Token::model($iSurvey)->updateByPk(
-                            $oToken->tid,
-                            [
-                                'remindersent' => self::dateShifted(date('Y-m-d H:i:s')),
-                                'remindercount' => $oToken->remindercount + 1,
-                            ]
-                        );
-                    }
                     ++$oToken->remindercount;
+                    if (!$this->simulate) {
+                        $oToken->save(false, [
+                            'remindersent',
+                            'remindercount'
+                        ]);
+                    }
                     $txtLog = "remindersent set to {$oToken->remindersent} count: {$oToken->remindercount}";
                 }
                 if ($this->simulate) {
@@ -1079,14 +1077,15 @@ class sendMailCron extends PluginBase
             }
         }
 
-        // Test si survey actif et avec bonne date $aSurveys[$sBaseLanguage]
         $sFrom = "{$aSurveys[$sBaseLanguage]['admin']} <{$aSurveys[$sBaseLanguage]['adminemail']}>";
         $sBounce = getBounceEmail($iSurvey);
-        $oCriteria = $this->getSendCriteria($iSurvey, $sType);
+        $baseCriteria = $this->getSendCriteria($iSurvey, $sType);
+        if (empty($baseCriteria)) {
+            return;
+        }
         // Send email
-        // Find all token
-        $oTokens = Token::model($iSurvey)->findAll($oCriteria);
-        $aCountMail['total'] = Token::model($iSurvey)->count($oCriteria);
+        $oTokens = Token::model($iSurvey)->findAll($baseCriteria);
+        $aCountMail['total'] = Token::model($iSurvey)->count($baseCriteria);
         $controlResponse = null;
         $isNotAnonymous = 'Y' != $oSurvey->anonymized;
         $reminderOnlyTo = $this->getSetting('reminderOnlyTo', 'Survey', $iSurvey, '');
@@ -1251,17 +1250,14 @@ class sendMailCron extends PluginBase
                     $txtLog = 'sent set to ' . $oToken->sent;
                 }
                 if ('remind' == $sType) {
-                    if (!$this->simulate) {
-                        Token::model($iSurvey)->updateByPk(
-                            $oToken->tid,
-                            [
-                                'remindersent' => self::dateShifted(date('Y-m-d H:i:s')),
-                                'remindercount' => $oToken->remindercount + 1
-                            ]
-                        );
-                    }
                     $oToken->remindersent = self::dateShifted(date('Y-m-d H:i:s'));
                     ++$oToken->remindercount;
+                    if (!$this->simulate) {
+                        $oToken->save(false, [
+                            'remindersent',
+                            'remindercount'
+                        ]);
+                    }
                     $txtLog = 'remindersent set to ' . $oToken->remindersent . ' count:' . $oToken->remindercount;
                 }
                 if ($this->simulate) {
@@ -1319,7 +1315,7 @@ class sendMailCron extends PluginBase
      * Get the criteria for this survey and this type.
      *
      * @param int  $iSurvey
-     * @param text $sType
+     * @param string $sType
      *
      * @return null|\CDBCriteria
      */
@@ -1337,6 +1333,7 @@ class sendMailCron extends PluginBase
             $maxReminder = $this->getSetting('maxEmail', null, null, $this->settings['maxEmail']['default']);
         }
         $maxReminder = intval($maxReminder);
+        // Add the sent to maxReminder
         --$maxReminder;
         if ('invite' == $sType && $maxReminder < 0) {
             $this->sendMailCronLog("Survey {$iSurvey}, {$sType} deactivated", 3, 'getSendCriteria');
@@ -1408,7 +1405,6 @@ class sendMailCron extends PluginBase
             default:
                 // Break for invalid
                 throw new Exception("Invalid email type {$sType} in sendMailCron.");
-                return 1;
         }
         $oCriteria->params = $aParams;
         return $oCriteria;
@@ -1776,6 +1772,10 @@ class sendMailCron extends PluginBase
      */
     private function translate($string)
     {
+        if(is_callable($this, 'gT')) {
+            return $this->gT($string);
+        }
+        return $string;
         return Yii::t('', $string, [], get_class($this));
     }
 }

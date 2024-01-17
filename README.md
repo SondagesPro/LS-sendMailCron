@@ -125,6 +125,7 @@ Translation can be done via [Glotpress of Sondages Pro plugin](http://translate.
 - Copyright © 2016-2017 Extract Recherche Marketing <http://www.extractmarketing.com>
 - Copyright © 2020 Martina Hansens Hospital <http://mhh.no>
 - Licence : GNU Affero General Public License <https://www.gnu.org/licenses/gpl-3.0.html>
+- [Donate](https://support.sondages.pro/open.php?topicId=12), [Liberapay](https://liberapay.com/SondagesPro/), [OpenCollective](https://opencollective.com/sondagespro) 
 
 ## Support
 - Issues <https://gitlab.com/SondagesPro/mailing/sendMailCron/issues>
