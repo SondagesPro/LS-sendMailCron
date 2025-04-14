@@ -867,7 +867,7 @@ class sendMailCron extends PluginBase
         $event->set('survey_id', $iSurvey);
         App()->getPluginManager()->dispatchEvent($event);
 
-        $this->sendMailCronFinalLog($aCountMail);
+        $this->sendMailCronFinalLog($aCountMail, $iSurvey, $sType);
     }
 
     /**
@@ -1493,7 +1493,7 @@ class sendMailCron extends PluginBase
         if ('' !== $maxThisType && $aCountMail['sent'] >= $maxThisType) {
             $stillToSend = $aCountMail['total'] * 2 - array_sum($aCountMail);
             $this->sendMailCronLog("Survey {$iSurvey}, {$sType} survey batch size achieved. {$stillToSend} email to send at next batch.", 1, 'stop');
-            $this->sendMailCronFinalLog($aCountMail);
+            $this->sendMailCronFinalLog($aCountMail, $iSurvey, $sType);
 
             return true;
         }
@@ -1501,7 +1501,7 @@ class sendMailCron extends PluginBase
         if ($this->getSetting('maxBatchSize') && $this->getSetting('maxBatchSize') <= $this->currentBatchSize) {
             $stillToSend = $aCountMail['total'] * 2 - array_sum($aCountMail);
             $this->sendMailCronLog("Batch size achieved for {$iSurvey} during {$sType}. {$stillToSend} email to send at next batch.", 1, 'stop');
-            $this->sendMailCronFinalLog($aCountMail);
+            $this->sendMailCronFinalLog($aCountMail, $iSurvey, $sType);
 
             return true;
         }
@@ -1509,7 +1509,7 @@ class sendMailCron extends PluginBase
         if ($this->getSetting('maxSurveyBatchSize', 'Survey', $iSurvey) && $this->getSetting('maxSurveyBatchSize', 'Survey', $iSurvey) <= $this->currentSurveyBatchSize) {
             $stillToSend = $aCountMail['total'] * 2 - array_sum($aCountMail);
             $this->sendMailCronLog("Batch survey size achieved for {$iSurvey} during {$sType}. {$stillToSend} email to send at next batch.", 1, 'stop');
-            $this->sendMailCronFinalLog($aCountMail);
+            $this->sendMailCronFinalLog($aCountMail, $iSurvey, $sType);
 
             return true;
         }
@@ -1669,31 +1669,32 @@ class sendMailCron extends PluginBase
      * Ending and return information according to sended after a send session.
      *
      * @param int[] $aCountMail array for email count
-     *
+     * @param int $surveyId the survey id
+     * @param string $sType type of email
      * @return @void
      */
-    private function sendMailCronFinalLog($aCountMail)
+    private function sendMailCronFinalLog($aCountMail, $surveyId, $sType)
     {
         if ((array_sum($aCountMail) - $aCountMail['total']) == 0) {
-            $this->sendMailCronLog('No message to sent', 1, 'finalog');
+            $this->sendMailCronLog("No $sType message to sent ($surveyId)", 1, 'finalog');
         } else {
             if ($aCountMail['sent']) {
-                $this->sendMailCronLog("{$aCountMail['sent']} messages sent", 1, 'finalog');
+                $this->sendMailCronLog("{$aCountMail['sent']} $sType messages sent ($surveyId)", 1, 'finalog');
             }
             if ($aCountMail['invalid']) {
-                $this->sendMailCronLog("{$aCountMail['invalid']} invalid email address", 1, 'finalog');
+                $this->sendMailCronLog("{$aCountMail['invalid']} $sType invalid email address ($surveyId)", 1, 'finalog');
             }
             if ($aCountMail['started']) {
-                $this->sendMailCronLog("{$aCountMail['started']} already started survey", 1, 'finalog');
+                $this->sendMailCronLog("{$aCountMail['started']} $sType already started survey ($surveyId)", 1, 'finalog');
             }
             if ($aCountMail['notstarted']) {
-                $this->sendMailCronLog("{$aCountMail['started']} not started survey", 1, 'finalog');
+                $this->sendMailCronLog("{$aCountMail['started']} $sType not started survey ($surveyId)", 1, 'finalog');
             }
             if ($aCountMail['attributedisabled']) {
-                $this->sendMailCronLog("{$aCountMail['attributedisabled']} disable by attribute", 1, 'finalog');
+                $this->sendMailCronLog("{$aCountMail['attributedisabled']} $sType disable by attribute ($surveyId)", 1, 'finalog');
             }
             if ($aCountMail['error']) {
-                $this->sendMailCronLog("{$aCountMail['error']} messages with error", 1, 'finalog');
+                $this->sendMailCronLog("{$aCountMail['error']} $sType messages with error ($surveyId)", 1, 'finalog');
             }
         }
     }
