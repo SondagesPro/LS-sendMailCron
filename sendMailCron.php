@@ -10,7 +10,7 @@
  * @copyright 2016-2018 Extract Recherche Marketing <https://dialogs.ca>
  * @license AGPL v3
  *
- * @version 4.4.1
+ * @version 4.4.2
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -700,7 +700,7 @@ class sendMailCron extends PluginBase
         Yii::import('application.helpers.surveytranslator_helper', true);
         Yii::import('application.helpers.replacements_helper', true);
         Yii::import('application.helpers.expressions.em_manager_helper', true);
-
+        App()->setConfig('publicurl', null);
         // Fix the url @todo parse url and validate
         App()->request->hostInfo = $this->getSetting('hostInfo');
         // Issue with url manager and script … @todo : fix LimeSurvey core
