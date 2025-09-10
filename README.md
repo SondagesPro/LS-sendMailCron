@@ -95,6 +95,7 @@ Plugin use 2 system for logging :
               'fileError' => array(
                   'class' => 'CFileLogRoute',
                   'levels' => 'warning, error',
+                  'except' => 'application.plugins.sendMailCron',
               ),
               'sendMailCron' => array(
                   'class' => 'CFileLogRoute',
