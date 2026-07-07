@@ -82,7 +82,7 @@ class sendMailCron extends PluginBase
                 'min' => 0,
             ],
             'label' => 'Max email to send (invitation + remind), set it to 0 to deactivate sending of email.',
-            'default' => 2,
+            'default' => 0,
         ],
         'delayInvitation' => [
             'type' => 'int',
@@ -317,11 +317,11 @@ class sendMailCron extends PluginBase
         if (!Yii::app() instanceof CConsoleApplication) {
             throw new CHttpException(403);
         }
-        if ($this->event->get('target') != get_class()) {
+        if ($this->event->get('target') != 'sendMailCron') {
             return;
         }
         $this->fixLsCommand();
-        if (intval(Yii::app()->getConfig('versionnumber') < 4)) {
+        if (intval(App()->getConfig('versionnumber') < 4)) {
             $this->setConfigsApi3();
         }
         $this->setArgs();
@@ -700,15 +700,12 @@ class sendMailCron extends PluginBase
         Yii::import('application.helpers.surveytranslator_helper', true);
         Yii::import('application.helpers.replacements_helper', true);
         Yii::import('application.helpers.expressions.em_manager_helper', true);
-        App()->setConfig('publicurl', null);
-        // Fix the url @todo parse url and validate
-        App()->request->hostInfo = $this->getSetting('hostInfo');
-        // Issue with url manager and script … @todo : fix LimeSurvey core
-        $baseUrl = trim($this->getSetting('baseUrl'));
-        if (Yii::app()->getUrlManager()->showScriptName) {
-            $baseUrl = $baseUrl . '/index.php';
-        }
-        Yii::app()->getUrlManager()->setBaseUrl($baseUrl);
+
+        // Fix the url manager
+        $this->setUrlManager();
+        /* Use public url for alias */
+        $this->setPublicUrl();
+        /* Loop in all surveys */
         if ($oSurveys) {
             foreach ($oSurveys as $oSurvey) {
                 $iSurvey = $oSurvey->sid;
@@ -795,6 +792,38 @@ class sendMailCron extends PluginBase
         }
     }
 
+    /**
+     * Set the url manager according to settings
+     * @return void
+     */
+    private function setUrlManager()
+    {
+        App()->request->hostInfo = $this->getSetting('hostInfo');
+        $baseUrl = trim($this->getSetting('baseUrl'));
+        if (Yii::app()->getUrlManager()->showScriptName) {
+            $baseUrl = $baseUrl . '/index.php';
+        }
+        Yii::app()->getUrlManager()->setBaseUrl($baseUrl);
+        App()->setConfig('publicurl', null);
+    }
+
+    /**
+     * Set the public url if it's not already set
+     * @return void
+     */
+    private function setPublicUrl()
+    {
+        $publicurl = rtrim(trim($this->getSetting('hostInfo')), '/') . "/" . trim(trim($this->getSetting('baseUrl')), '/');
+        if (App()->getUrlManager()->getUrlFormat() == CUrlManager::GET_FORMAT) {
+            $publicurl = $publicurl . '/';
+            if (Yii::app()->getUrlManager()->showScriptName) {
+                $publicurl = $publicurl . 'index.php';
+            }
+        } elseif (Yii::app()->getUrlManager()->showScriptName) {
+            $publicurl = $publicurl . '/index.php';
+        }
+        App()->setConfig('publicurl', $publicurl);
+    }
     /**
      * Return the date fixed by config (SQL format).
      *
@@ -901,7 +930,7 @@ class sendMailCron extends PluginBase
             return;
         }
 
-        $aCountMail['total'] = Token::model($iSurvey)->count($baseCriteria);;
+        $aCountMail['total'] = Token::model($iSurvey)->count($baseCriteria);
         $controlResponse = null;
         $isNotAnonymous = 'Y' != $oSurvey->anonymized;
         $reminderOnlyTo = $this->getSetting('reminderOnlyTo', 'Survey', $iSurvey, '');
@@ -963,6 +992,14 @@ class sendMailCron extends PluginBase
             $mail = \LimeMailer::getInstance();
             $mail->setToken($oToken->token);
             $mail->setTypeWithRaw($sType);
+            /* Check alias */
+            if (App()->getConfig('dbversionnumber') >= 494) {
+                if ($oSurvey->getAliasForLanguage($mail->mailLanguage)) {
+                    $this->setPublicUrl();
+                } else {
+                    App()->setConfig('publicurl', null);
+                }
+            }
             if ($this->simulate) {
                 $this->sendMailCronLog("Simulate send : {$oToken->email} ({$oToken->tid}) for {$iSurvey}", 3, 'token');
                 $success = true;
@@ -1773,7 +1810,7 @@ class sendMailCron extends PluginBase
      */
     private function translate($string)
     {
-        if(is_callable($this, 'gT')) {
+        if (is_callable($this, 'gT')) {
             return $this->gT($string);
         }
         return $string;
