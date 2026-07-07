@@ -1810,7 +1810,7 @@ class sendMailCron extends PluginBase
      */
     private function translate($string)
     {
-        if (is_callable($this, 'gT')) {
+        if (is_callable([$this, 'gT'])) {
             return $this->gT($string);
         }
         return $string;
