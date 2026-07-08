@@ -5,12 +5,12 @@
  * Need activate cron system in the server : php yourlimesurveydir/application/commands/console.php plugin cron --interval=X where X is interval in minutes.
  *
  * @author Denis Chenu <denis@sondages.pro>
- * @copyright 2016-2023 Denis Chenu <https://www.sondages.pro>
+ * @copyright 2016-2026 Denis Chenu <https://www.sondages.pro>
  * @copyright 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com>
  * @copyright 2016-2018 Extract Recherche Marketing <https://dialogs.ca>
  * @license AGPL v3
  *
- * @version 4.4.2
+ * @version 4.5.0
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
