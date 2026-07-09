@@ -10,7 +10,7 @@
  * @copyright 2016-2018 Extract Recherche Marketing <https://dialogs.ca>
  * @license AGPL v3
  *
- * @version 4.5.0
+ * @version 4.5.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -1106,7 +1106,7 @@ class sendMailCron extends PluginBase
         foreach ($aSurveyLangs as $language) {
             $aLangAttachments = [];
             if (!empty($aSurveys[$sSurveyLanguage]['attachments'])) {
-                $aCurrentAttachments = @unserialize($aSurveys[$sSurveyLanguage]['attachments']);
+                $aCurrentAttachments = @unserialize($aSurveys[$sSurveyLanguage]['attachments'], ['allowed_classes' => false]);
                 // $aLangAttachments = array();
                 if (isset($aCurrentAttachments[$attachementTemplate]) && is_array($aCurrentAttachments[$attachementTemplate])) {
                     $aLangAttachments[$language] = $aCurrentAttachments[$attachementTemplate];
