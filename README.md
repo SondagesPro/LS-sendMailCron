@@ -4,14 +4,18 @@ Allow to send token email (invite or reminder) via PHP cli . This allow to use c
 ## Installation
 
 - See [Install and activate a plugin for LimeSurvey](https://extensions.sondages.pro/about/install-and-activate-a-plugin-for-limesurvey.html) for version before 4.0
-- This version was tested with LimeSurvey version 4.1.18,
 - This version muts work with all LimeSurvey version 2.55 and up
 - In some LimeSurvey version : you need to manually create the `./application/runtime` to use CFileLogRoute ([See LimeSurvey manual](https://manual.limesurvey.org/Cron)).
 
 ### LimeSurvey version compatibility
-- 2.73 : This version was not tested
-- 3.X : This version was not tested
-- 4.X : Tested
+- 2.73 : This version was not tested but must work **no support**
+- 3.X : This version was not tested but must work **no support**
+- 4.X : This version was not tested but must work **no support**
+- 5.X : This version was not tested but must work
+- 6.X : Tested
+- 7.X : Tested
+
+This plugin use own url manager, and do not use `publicurl` set in config.
 
 ### Via GIT
 - Go to your LimeSurvey Directory (version up to 2.54.4)
@@ -121,13 +125,17 @@ Translation can be done via [Glotpress of Sondages Pro plugin](http://translate.
 
 ## Home page & Copyright
 - HomePage <http://extensions.sondages.pro/sendmailcron/>
-- Copyright © 2016-2020 Denis Chenu <http://sondages.pro> and [contributors](https://gitlab.com/SondagesPro/sendMailCron/graphs/master)
+- Copyright © 2016-2026 Denis Chenu <http://sondages.pro> and [contributors](https://gitlab.com/SondagesPro/sendMailCron/graphs/master)
 - Copyright © 2016 AXA Insurance (Gulf) B.S.C. <http://www.axa-gulf.com>
 - Copyright © 2016-2017 Extract Recherche Marketing <http://www.extractmarketing.com>
 - Copyright © 2020 Martina Hansens Hospital <http://mhh.no>
 - Licence : GNU Affero General Public License <https://www.gnu.org/licenses/gpl-3.0.html>
 - [Donate](https://support.sondages.pro/open.php?topicId=12), [Liberapay](https://liberapay.com/SondagesPro/), [OpenCollective](https://opencollective.com/sondagespro) 
+- Code quality and security are continuously analyzed by [CodeRabbit](https://coderabbit.ai/), [Snyk](https://snyk.io/), and [Semgrep](https://semgrep.dev/).
+- Thanks to GitLab for providing the hosting platform, and to CodeRabbit, Snyk, and Semgrep for making their services available to open source projects.
+
+This project benefits from the free offerings these companies provide to open source projects. Their support helps improve code quality and security.
 
 ## Support
-- Issues <https://gitlab.com/SondagesPro/mailing/sendMailCron/issues>
+- Report Issues <https://gitlab.com/SondagesPro/mailing/sendMailCron/issues>
 - Professional support <https://support.sondages.pro/>
