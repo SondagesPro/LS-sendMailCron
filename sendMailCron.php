@@ -1506,7 +1506,7 @@ class sendMailCron extends PluginBase
                 $availCronTypes = $this->getSetting('cronTypes', null, null, '');
                 $availCronTypes = explode('|', $availCronTypes);
                 if ($cronType && !in_array($cronType, $availCronTypes)) {
-                    $this->sendMailCronLog("invalid cronType : {$cronType}, plugin is disable", 1, 'command');
+                    $this->sendMailCronLog("invalid cronType : " . json_encode($cronType) . ", plugin is disable", 1, 'command');
                     $this->disable = true;
                 } else {
                     $this->cronType = $cronType;
