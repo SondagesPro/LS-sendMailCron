@@ -130,12 +130,15 @@ Translation can be done via [Glotpress of Sondages Pro plugin](http://translate.
 - Copyright © 2016-2017 Extract Recherche Marketing <http://www.extractmarketing.com>
 - Copyright © 2020 Martina Hansens Hospital <http://mhh.no>
 - Licence : GNU Affero General Public License <https://www.gnu.org/licenses/gpl-3.0.html>
-- [Donate](https://support.sondages.pro/open.php?topicId=12), [Liberapay](https://liberapay.com/SondagesPro/), [OpenCollective](https://opencollective.com/sondagespro) 
-- Code quality and security are continuously analyzed by [CodeRabbit](https://coderabbit.ai/), [Snyk](https://snyk.io/), and [Semgrep](https://semgrep.dev/).
-- Thanks to GitLab for providing the hosting platform, and to CodeRabbit, Snyk, and Semgrep for making their services available to open source projects.
-
-This project benefits from the free offerings these companies provide to open source projects. Their support helps improve code quality and security.
 
 ## Support
 - Report Issues <https://gitlab.com/SondagesPro/mailing/sendMailCron/issues>
 - Professional support <https://support.sondages.pro/>
+
+## Acknowledgements
+
+If you find this project useful, you can support its development through [Donate](https://support.sondages.pro/open.php?topicId=12), [Liberapay](https://liberapay.com/SondagesPro/), or [OpenCollective](https://opencollective.com/sondagespro). Thank you!
+
+Code quality and security are continuously analyzed by [CodeRabbit](https://coderabbit.ai/), [Snyk](https://snyk.io/), and [Semgrep](https://semgrep.dev/).
+
+Thanks to GitLab for providing the hosting platform, and to CodeRabbit, Snyk, and Semgrep for making their services available to open source projects.
