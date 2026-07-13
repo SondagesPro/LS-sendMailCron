@@ -139,6 +139,6 @@ Translation can be done via [Glotpress of Sondages Pro plugin](http://translate.
 
 If you find this project useful, you can support its development through [Donate](https://support.sondages.pro/open.php?topicId=12), [Liberapay](https://liberapay.com/SondagesPro/), or [OpenCollective](https://opencollective.com/sondagespro). Thank you!
 
-Code quality and security are continuously analyzed by [CodeRabbit](https://coderabbit.ai/), [Snyk](https://snyk.io/), and [Semgrep](https://semgrep.dev/).
+Code quality and security are continuously analyzed by [SonarCloud](https://sonarcloud.io/) [CodeRabbit](https://coderabbit.ai/), [Snyk](https://snyk.io/), and [Semgrep](https://semgrep.dev/).
 
-Thanks to GitLab for providing the hosting platform, and to CodeRabbit, Snyk, and Semgrep for making their services available to open source projects.
+Thanks to GitLab for providing the hosting platform, and to SonarCloud, CodeRabbit, Snyk, and Semgrep for making their services available to open source projects.

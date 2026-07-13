@@ -1,0 +1,5 @@
+## Ignore any hidden folder/files (except explicitly defined)
+.*
+!.gitignore
+!.gitattributes
+!.gitlab-ci.yml
