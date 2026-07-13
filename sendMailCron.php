@@ -67,14 +67,12 @@ class sendMailCron extends PluginBase
         'hostInfo' => [
             'type' => 'string',
             'label' => 'Host info for url',
+            'help' => 'Only used if publicurl is not set',
         ],
         'baseUrl' => [
             'type' => 'string',
             'label' => 'baseUrl',
-        ],
-        'scriptUrl' => [
-            'type' => 'string',
-            'label' => 'scriptUrl',
+            'help' => 'Only used if publicurl is not set',
         ],
         'maxEmail' => [
             'type' => 'int',
@@ -262,7 +260,6 @@ class sendMailCron extends PluginBase
             $settings = [
                 'hostInfo' => Yii::app()->request->getHostInfo(),
                 'baseUrl' => Yii::app()->request->getBaseUrl(),
-                'scriptUrl' => Yii::app()->request->getScriptUrl(),
             ];
             $this->saveSettings($settings);
             $event->set('message', 'Default configuration for url is used.');
@@ -364,10 +361,6 @@ class sendMailCron extends PluginBase
             $this->settings['baseUrl']['default'] = Yii::app()->request->getBaseUrl();
         }
         $pluginSettings = parent::getPluginSettings($getValues);
-        if (intval(Yii::app()->getConfig('versionnumber') >= 4)) {
-            unset($pluginSettings['scriptUrl']);
-            $pluginSettings['baseUrl']['help'] = 'Only dirname are used, script url are automatically checked with showScriptName setting for urlManager in your config.php file';
-        }
         if ($getValues) {
             if ($pluginSettings['cronTypes']) {
                 $pluginSettings['cronTypes']['current'] = implode("\n", explode('|', $pluginSettings['cronTypes']['current']));
@@ -703,8 +696,6 @@ class sendMailCron extends PluginBase
 
         // Fix the url manager
         $this->setUrlManager();
-        /* Use public url for alias */
-        $this->setPublicUrl();
         /* Loop in all surveys */
         if ($oSurveys) {
             foreach ($oSurveys as $oSurvey) {
@@ -798,32 +789,19 @@ class sendMailCron extends PluginBase
      */
     private function setUrlManager()
     {
-        App()->request->hostInfo = $this->getSetting('hostInfo');
+        App()->request->hostInfo = "";
         $baseUrl = trim($this->getSetting('baseUrl'));
-        if (Yii::app()->getUrlManager()->showScriptName) {
-            $baseUrl = $baseUrl . '/index.php';
+        Yii::app()->getUrlManager()->setBaseUrl("");
+        App()->getRequest()->setScriptUrl("index.php");
+        $publicurl = App()->getConfig('publicurl', '');
+        $urlscheme = parse_url($publicurl, PHP_URL_SCHEME);
+        if (empty($publicurl) || ( $urlscheme != "http" && $urlscheme != "https")) {
+            $hostInfo = rtrim(trim($this->getSetting('hostInfo')), "/");
+            $baseUrl = trim(trim($this->getSetting('baseUrl')), "/");
+            App()->setConfig('publicurl', $hostInfo . "/" . $baseUrl);
         }
-        Yii::app()->getUrlManager()->setBaseUrl($baseUrl);
-        App()->setConfig('publicurl', null);
     }
 
-    /**
-     * Set the public url if it's not already set
-     * @return void
-     */
-    private function setPublicUrl()
-    {
-        $publicurl = rtrim(trim($this->getSetting('hostInfo')), '/') . "/" . trim(trim($this->getSetting('baseUrl')), '/');
-        if (App()->getUrlManager()->getUrlFormat() == CUrlManager::GET_FORMAT) {
-            $publicurl = $publicurl . '/';
-            if (Yii::app()->getUrlManager()->showScriptName) {
-                $publicurl = $publicurl . 'index.php';
-            }
-        } elseif (Yii::app()->getUrlManager()->showScriptName) {
-            $publicurl = $publicurl . '/index.php';
-        }
-        App()->setConfig('publicurl', $publicurl);
-    }
     /**
      * Return the date fixed by config (SQL format).
      *
@@ -846,12 +824,10 @@ class sendMailCron extends PluginBase
      */
     private function setConfigsApi3()
     {
-        $aDefaultConfigs = require Yii::app()->basePath . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config-defaults.php';
+        $aDefaultConfigs = require(Yii::app()->basePath . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config-defaults.php');
         foreach ($aDefaultConfigs as $sConfig => $defaultConfig) {
             Yii::app()->setConfig($sConfig, $defaultConfig);
         }
-        // ~ $ls_config = require(Yii::app()->basePath. DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config-defaults.php');
-        // ~ $this->config = array_merge($this->config, $ls_config);
         // Fix rootdir .....
         if (!is_dir(Yii::app()->getConfig('usertemplaterootdir'))) {
             $sRootDir = realpath(Yii::app()->basePath . DIRECTORY_SEPARATOR . '..');
@@ -866,7 +842,7 @@ class sendMailCron extends PluginBase
             Yii::app()->setConfig('styledir', $sRootDir . DIRECTORY_SEPARATOR . 'styledir');
         }
         if (file_exists(Yii::app()->basePath . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config.php')) {
-            $config = require Yii::app()->basePath . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config.php';
+            $config = require(Yii::app()->basePath . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config.php');
             if (is_array($config['config']) && !empty($config['config'])) {
                 foreach ($config['config'] as $key => $value) {
                     Yii::app()->setConfig($key, $value);
@@ -992,14 +968,6 @@ class sendMailCron extends PluginBase
             $mail = \LimeMailer::getInstance();
             $mail->setToken($oToken->token);
             $mail->setTypeWithRaw($sType);
-            /* Check alias */
-            if (App()->getConfig('dbversionnumber') >= 494) {
-                if ($oSurvey->getAliasForLanguage($mail->mailLanguage)) {
-                    $this->setPublicUrl();
-                } else {
-                    App()->setConfig('publicurl', null);
-                }
-            }
             if ($this->simulate) {
                 $this->sendMailCronLog("Simulate send : {$oToken->email} ({$oToken->tid}) for {$iSurvey}", 3, 'token');
                 $success = true;
@@ -1772,7 +1740,7 @@ class sendMailCron extends PluginBase
                     'userthemerootdir' => $webroot . DIRECTORY_SEPARATOR . 'upload' . DIRECTORY_SEPARATOR . 'themes' . DIRECTORY_SEPARATOR . 'survey',
                 ];
             }
-            $configConfig = require Yii::getPathOfAlias('application') . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config.php';
+            $configConfig = require(Yii::getPathOfAlias('application') . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config.php');
             if (isset($configConfig['config'])) {
                 $configFixed = array_merge($configFixed, $configConfig['config']);
             }
@@ -1802,18 +1770,17 @@ class sendMailCron extends PluginBase
     }
 
     /**
-     * get translation.
-     *
-     * @param string $string
-     *
+     * get translation , see parent::gT
+     * @param string $string to be translated
+     * @param string $sEscapeMode in html, js and unescaped
+     * @param string $sLanguage to force a specific language (else take current)
      * @return string
      */
-    private function translate($string)
+    private function translate($string, $sEscapeMode = 'unescaped', $sLanguage = null)
     {
         if (is_callable([$this, 'gT'])) {
-            return $this->gT($string);
+            return $this->gT($string, $sEscapeMode, $sLanguage);
         }
         return $string;
-        return Yii::t('', $string, [], get_class($this));
     }
 }
